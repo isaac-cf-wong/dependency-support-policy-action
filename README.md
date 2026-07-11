@@ -82,7 +82,7 @@ Defaults live in `pyproject.toml`; CLI flags / action inputs override them.
 policy = "spec0"
 python-support-months = 36           # override the policy's Python window
 package-support-months = 24          # override the policy's package window
-groups = ["project", "optional:sgwb"] # dependency collections to manage
+groups = ["project"]                  # dependency collections to manage
 include = []                          # if non-empty, only these packages
 exclude = ["some-fast-moving-lib"]
 manage-python = true
