@@ -28,16 +28,21 @@ never touches upper bounds or unmanaged ecosystems.
     "packageRules": [
         {
             "matchManagers": ["pep621"],
-            "matchDepTypes": [
-                "project.dependencies",
-                "project.requires-python"
-            ],
+            "matchDepTypes": ["project.dependencies"],
             "description": "Lower bounds owned by dependency-support-policy.",
+            "enabled": false
+        },
+        {
+            "matchDatasources": ["python-version"],
+            "description": "requires-python owned by dependency-support-policy.",
             "enabled": false
         }
     ]
 }
 ```
+
+(Renovate tracks the `requires-python` constraint through the
+`python-version` datasource, not a `pep621` depType.)
 
 This repository's own
 [`renovate.json`](https://github.com/isaac-cf-wong/dependency-support-policy-action/blob/main/renovate.json)
