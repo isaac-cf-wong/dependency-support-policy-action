@@ -49,6 +49,9 @@ lock = "minimal"
 [tool.uv-dynamic-versioning]
 vcs = "git"
 style = "semver"
+# Only full semver tags carry versions; ignore the floating major tag (v0,
+# v1, ...) that the release workflow moves onto the same commit.
+pattern = '^v(?P<base>\d+\.\d+\.\d+)(?:-(?P<stage>alpha|beta|rc)\.?(?P<revision>\d+)?)?$'
 # Action consumers run this project from a checkout without .git.
 fallback-version = "0.0.0"
 

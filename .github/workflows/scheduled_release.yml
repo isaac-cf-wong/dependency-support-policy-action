@@ -130,6 +130,17 @@ jobs:
               with:
                   python-version: '3.13'
 
+            # Pin the version from the release tag so the build cannot be
+            # confused by other tags on the same commit (e.g. the floating
+            # major tag).
+            - name: Set version for publishing
+              env:
+                  TAG_NAME: ${{ needs.create_tag.outputs.new_tag }}
+              run: |
+                  VERSION="${TAG_NAME#v}"
+                  echo "Publishing version $VERSION"
+                  sed -i "s/dynamic = \[\"version\"\]/version = \"$VERSION\"\ndynamic = []/" pyproject.toml
+
             - name: Build distribution
               run: uv build
 
