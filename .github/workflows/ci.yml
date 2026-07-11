@@ -35,8 +35,22 @@ jobs:
     test:
         strategy:
             matrix:
+                # Locked, minimum (lowest-direct), and latest (highest)
+                # resolutions run on ubuntu; macos runs highest only, on the
+                # assumption that resolution behaviour is OS-independent.
                 python-version: ['3.12', '3.13', '3.14']
-                os: [ubuntu-latest, macos-latest]
+                os: [ubuntu-latest]
+                resolution: [locked, lowest-direct, highest]
+                include:
+                    - os: macos-latest
+                      python-version: '3.12'
+                      resolution: highest
+                    - os: macos-latest
+                      python-version: '3.13'
+                      resolution: highest
+                    - os: macos-latest
+                      python-version: '3.14'
+                      resolution: highest
         runs-on: ${{ matrix.os }}
         steps:
             - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -50,10 +64,17 @@ jobs:
                   enable-cache: 'true'
 
             - name: Install dependencies
-              run: uv sync --group dev --frozen
+              env:
+                  RESOLUTION: ${{ matrix.resolution }}
+              run: |
+                  case "$RESOLUTION" in
+                      locked) uv sync --group dev --frozen ;;
+                      lowest-direct) uv sync --group dev --upgrade --resolution lowest-direct ;;
+                      highest) uv sync --group dev --upgrade ;;
+                  esac
 
             - name: Run tests with pytest
-              run: uv run --frozen pytest
+              run: uv run --no-sync pytest
 
     typecheck:
         runs-on: ubuntu-latest
