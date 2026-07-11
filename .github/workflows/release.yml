@@ -68,5 +68,8 @@ jobs:
                   MAJOR="${TAG_NAME%%.*}"
                   git config user.name "github-actions[bot]"
                   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-                  git tag -f "$MAJOR" "$TAG_NAME"
+                  # Point the major tag at the commit (peel the annotated
+                  # release tag): a ref named v0 pointing at a tag object
+                  # named v0.1.0 breaks `git describe --abbrev=0`.
+                  git tag -f "$MAJOR" "$TAG_NAME^{}"
                   git push origin -f "refs/tags/$MAJOR"
