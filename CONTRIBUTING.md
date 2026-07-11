@@ -1,6 +1,8 @@
 # Contributing
 
-Thanks for considering a contribution!
+Thanks for considering a contribution! This project follows a
+[Code of Conduct](https://github.com/isaac-cf-wong/dependency-support-policy-action/blob/main/CODE_OF_CONDUCT.md)
+— by participating you agree to uphold it.
 
 ## Development setup
 
