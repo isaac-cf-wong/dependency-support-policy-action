@@ -48,3 +48,9 @@ This repository's own
 [`renovate.json`](https://github.com/isaac-cf-wong/dependency-support-policy-action/blob/main/renovate.json)
 follows exactly this split: Renovate bumps only pre-commit hooks and
 `dependency-groups`; the SPEC 0 workflow owns the runtime floors.
+
+## Ecosystem packages
+
+For sibling packages from your own project family that should always floor
+at the **latest release** rather than a time window, see
+[Ecosystem Packages: Latest Floors](ecosystem-packages.md).
