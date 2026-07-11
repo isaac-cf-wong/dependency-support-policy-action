@@ -21,3 +21,6 @@ htmlcov/
 
 # OS
 .DS_Store
+
+# Generated at release time by git-cliff; lives only in GitHub Releases
+CHANGELOG.md
