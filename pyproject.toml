@@ -15,13 +15,12 @@ classifiers = [
   "Topic :: Software Development :: Build Tools",
   "License :: OSI Approved :: BSD License",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
 ]
-requires-python = ">=3.11"
-dependencies = ["packaging>=24.2", "tomlkit>=0.13.2"]
+requires-python = ">=3.12"
+dependencies = ["packaging>=24.2", "tomlkit>=0.14.0"]
 
 [project.scripts]
 dependency-support-policy = "dependency_support_policy.cli:main"
@@ -40,6 +39,10 @@ dev = [
   "zizmor>=1.5.0",
 ]
 release = ["git-cliff>=2.7.0"]
+
+[tool.dependency-support-policy]
+policy = "spec0"
+lock = "minimal"
 
 [tool.uv-dynamic-versioning]
 vcs = "git"
@@ -70,14 +73,14 @@ publish-url = "https://test.pypi.org/legacy/"
 explicit = true
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 warn_unreachable = true
 pretty = true
 
 [tool.ruff]
 line-length = 120
-target-version = "py311"
+target-version = "py312"
 lint.extend-select = [
   "E",
   "F",

@@ -11,21 +11,16 @@
         "enabled": true
     },
     "lockFileMaintenance": {
-        "enabled": true,
-        "schedule": ["before 4am on monday"]
+        "enabled": false
     },
     "packageRules": [
         {
             "matchManagers": ["pep621"],
-            "matchUpdateTypes": ["patch", "minor"],
-            "groupName": "runtime minor & patch",
-            "minimumReleaseAge": "3 days",
-            "automerge": true,
-            "automergeType": "pr",
-            "automergeStrategy": "squash"
-        },
-        {
-            "matchUpdateTypes": ["major"],
+            "matchDepTypes": [
+                "project.dependencies",
+                "project.requires-python"
+            ],
+            "description": "Runtime lower bounds are owned by the dependency-support-policy (SPEC 0) workflow.",
             "enabled": false
         },
         {
@@ -38,24 +33,7 @@
         },
         {
             "matchManagers": ["github-actions"],
-            "groupName": "github actions",
-            "schedule": ["every weekend"],
-            "minimumReleaseAge": "3 days",
-            "automerge": true,
-            "automergeType": "pr",
-            "automergeStrategy": "squash"
-        },
-        {
-            "matchManagers": ["github-actions"],
-            "matchUpdateTypes": ["major"],
             "enabled": false
-        },
-        {
-            "matchUpdateTypes": ["lockFileMaintenance"],
-            "automerge": true,
-            "automergeType": "pr",
-            "automergeStrategy": "squash",
-            "groupName": "lock file maintenance"
         },
         {
             "matchManagers": ["pre-commit"],
