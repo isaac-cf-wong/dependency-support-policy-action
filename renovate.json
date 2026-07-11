@@ -16,10 +16,7 @@
     "packageRules": [
         {
             "matchManagers": ["pep621"],
-            "matchDepTypes": [
-                "project.dependencies",
-                "project.requires-python"
-            ],
+            "matchDepTypes": ["project.dependencies"],
             "description": "Runtime lower bounds are owned by the dependency-support-policy (SPEC 0) workflow.",
             "enabled": false
         },
@@ -43,6 +40,11 @@
         },
         {
             "matchFileNames": ["tests/data/**"],
+            "enabled": false
+        },
+        {
+            "matchDatasources": ["python-version"],
+            "description": "The requires-python floor is owned by the dependency-support-policy (SPEC 0) workflow.",
             "enabled": false
         }
     ],
