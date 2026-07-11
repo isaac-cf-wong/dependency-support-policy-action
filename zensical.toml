@@ -17,6 +17,7 @@ nav = [
     { "GitHub Action" = "user-guide/github-action.md" },
     { "uv.lock Handling" = "user-guide/lockfile.md" },
     { "Coexisting with Renovate" = "user-guide/renovate.md" },
+    { "Ecosystem Packages" = "user-guide/ecosystem-packages.md" },
     { "Recommended CI" = "user-guide/ci-recommendations.md" },
     { "Known Limitations" = "user-guide/limitations.md" },
   ] },
