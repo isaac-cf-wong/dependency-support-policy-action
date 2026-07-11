@@ -1,0 +1,87 @@
+name: Publish to TestPyPI
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+        inputs:
+            tag_name:
+                description: 'Tag name for the publish (e.g., v1.2.3)'
+                required: false
+                type: string
+    workflow_call:
+        inputs:
+            tag_name:
+                description: 'Tag name for the publish (e.g., v1.2.3)'
+                required: false
+                type: string
+
+permissions:
+    contents: read
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        environment:
+            name: testpypi
+        permissions:
+            id-token: write
+            contents: read
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  ref: ${{ inputs.tag_name || github.sha }}
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Output build information
+              env:
+                  REF_NAME: ${{ inputs.tag_name || github.sha }}
+              run: |
+                  {
+                    echo "### Publishing Build :package:"
+                    echo "- **Ref**: $REF_NAME"
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+              with:
+                  python-version: '3.13'
+                  enable-cache: 'true'
+
+            - name: Install dependencies
+              run: uv sync --group dev --frozen
+
+            - name: Set version for publishing
+              env:
+                  TAG_NAME: ${{ inputs.tag_name }}
+              run: |
+                  if [ -n "$TAG_NAME" ]; then
+                    # Use the tag, stripping the 'v' prefix if present
+                    VERSION="${TAG_NAME#v}"
+                  else
+                    # For untagged builds, take the dynamic version and strip
+                    # the +local part, which TestPyPI rejects
+                    VERSION=$(uv run --frozen python -c 'from importlib.metadata import version; print(version("dependency-support-policy"))' | sed 's/+.*//')
+                  fi
+                  echo "Publishing version $VERSION"
+
+                  # Pin the version statically for this build
+                  sed -i "s/dynamic = \[\"version\"\]/version = \"$VERSION\"\ndynamic = []/" pyproject.toml
+
+            - name: Build distribution
+              run: uv build
+
+            - name: Smoke test (wheel)
+              run:
+                  uv run --isolated --no-project --with dist/*.whl
+                  tests/smoke_test.py
+
+            - name: Smoke test (source distribution)
+              run:
+                  uv run --isolated --no-project --with dist/*.tar.gz
+                  tests/smoke_test.py
+
+            - name: Publish to TestPyPI
+              run: uv publish --index testpypi
