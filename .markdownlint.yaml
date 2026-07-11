@@ -1,0 +1,38 @@
+---
+# Disable line length check
+MD013: false
+
+# Require ATX-style headings (# instead of = or -)
+MD003:
+    style: atx
+
+# Enforce consistent list indentation
+MD007:
+    indent: 4
+
+# Allow multiple consecutive blank lines for flexibility
+MD012: false
+
+# Allow duplicate headings in the same document
+MD024: false
+
+# Allow trailing punctuation in headings
+MD026: false
+
+# Allow inline HTML for flexibility in Markdown rendering
+MD033: false
+
+# Disable first-line heading requirement
+MD041: false
+
+# Dollar signs used before commands without showing output
+MD014: true
+
+# Allow flexibility in emphasis formatting
+MD036: false
+
+# Lists should be surrounded by blank lines
+MD032: true
+
+# Allow multiple top-level headings
+MD025: false

@@ -1,0 +1,49 @@
+# Update pyproject.toml and uv.lock together in a single pull request.
+# The action edits both files (rolling back if the re-lock fails), and
+# peter-evans/create-pull-request turns the working-tree diff into a PR.
+#
+# Copy this file to .github/workflows/ in your repository. Pin the actions
+# to full commit SHAs in production. PR creation by workflows must be allowed
+# in Settings -> Actions -> General.
+name: Support floor update (with lockfile)
+
+on:
+    schedule:
+        - cron: '0 6 1 * *' # monthly, 1st at 06:00 UTC
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    update-floors:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Apply support policy and re-lock
+              id: policy
+              uses: isaac-cf-wong/dependency-support-policy-action@v1
+              with:
+                  mode: update
+                  lock: minimal
+
+            - name: Create or update pull request
+              if: steps.policy.outputs.changed == 'true'
+              uses: peter-evans/create-pull-request@v7
+              with:
+                  branch: dependency-support-policy/update
+                  title: 'chore(deps): raise minimum supported versions'
+                  commit-message: 'chore(deps): raise minimum supported versions'
+                  body: |
+                      Automated rolling support-floor update (pyproject.toml + uv.lock).
+
+                      Files changed: `${{ steps.policy.outputs.files-changed }}`
+
+                      ```json
+                      ${{ steps.policy.outputs.dependency-floors-changed }}
+                      ```
+                  labels: dependencies

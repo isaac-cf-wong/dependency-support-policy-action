@@ -1,0 +1,45 @@
+# Scheduled support-floor updates: raise dependency lower bounds and the
+# Python floor once a month and open (or update) a pull request.
+#
+# Copy this file to .github/workflows/ in your repository. Pin the actions
+# to full commit SHAs in production. PR creation by workflows must be allowed
+# in Settings -> Actions -> General.
+name: Support floor update
+
+on:
+    schedule:
+        - cron: '0 6 1 * *' # monthly, 1st at 06:00 UTC
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    update-floors:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Apply support policy
+              id: policy
+              uses: isaac-cf-wong/dependency-support-policy-action@v1
+              with:
+                  mode: update
+
+            - name: Create or update pull request
+              if: steps.policy.outputs.changed == 'true'
+              uses: peter-evans/create-pull-request@v7
+              with:
+                  branch: dependency-support-policy/update
+                  title: 'chore(deps): raise minimum supported versions'
+                  commit-message: 'chore(deps): raise minimum supported versions'
+                  body: |
+                      Automated rolling support-floor update.
+
+                      ```json
+                      ${{ steps.policy.outputs.dependency-floors-changed }}
+                      ```
+                  labels: dependencies

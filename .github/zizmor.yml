@@ -1,0 +1,18 @@
+# zizmor configuration - https://docs.zizmor.sh/configuration/
+rules:
+    artipacked:
+        # These checkouts intentionally keep credentials: they push tags.
+        ignore:
+            - release.yml
+            - scheduled_release.yml
+    dangerous-triggers:
+        # PR-title lint uses pull_request_target with read-only permissions
+        # and never checks out or executes PR code.
+        ignore:
+            - semantic_pull_release.yml
+    superfluous-actions:
+        # softprops/action-gh-release + git-cliff content is the established
+        # release pattern across this org's repositories.
+        ignore:
+            - release.yml
+            - draft_release.yml

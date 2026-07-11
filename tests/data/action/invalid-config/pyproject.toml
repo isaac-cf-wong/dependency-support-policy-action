@@ -1,0 +1,7 @@
+[project]
+name = "fixture-invalid"
+version = "0.1.0"
+dependencies = []
+
+[tool.dependency-support-policy]
+lock = "sometimes"

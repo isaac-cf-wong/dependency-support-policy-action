@@ -1,0 +1,266 @@
+name: CI
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+    workflow_call:
+
+permissions:
+    contents: read
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+              with:
+                  python-version: '3.13'
+                  enable-cache: 'true'
+
+            - name: Install dependencies
+              run: uv sync --all-groups --frozen
+
+            - name: Run pre-commit on all files
+              run: uv run --frozen pre-commit run --all-files --show-diff-on-failure
+
+    test:
+        strategy:
+            matrix:
+                python-version: ['3.11', '3.12', '3.13', '3.14']
+                os: [ubuntu-latest, macos-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  enable-cache: 'true'
+
+            - name: Install dependencies
+              run: uv sync --group dev --frozen
+
+            - name: Run tests with pytest
+              run: uv run --frozen pytest
+
+    typecheck:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+              with:
+                  python-version: '3.13'
+                  enable-cache: 'true'
+
+            - name: Install dependencies
+              run: uv sync --group dev --frozen
+
+            - name: Run mypy
+              run: uv run --frozen mypy src
+
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+              with:
+                  python-version: '3.13'
+                  enable-cache: 'true'
+
+            - name: Build distributions
+              run: uv build
+
+    action-compliant:
+        name: action test / compliant project
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Run action (check mode)
+              id: policy
+              uses: ./
+              with:
+                  mode: check
+                  working-directory: tests/data/action/compliant
+                  reference-date: '2025-01-01'
+
+            - name: Assert no drift reported
+              env:
+                  CHANGED: ${{ steps.policy.outputs.changed }}
+                  PY_CHANGED: ${{ steps.policy.outputs.python-floor-changed }}
+              run: |
+                  test "$CHANGED" = "false"
+                  test "$PY_CHANGED" = "false"
+
+    action-dep-update:
+        name: action test / dependency floor update
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Run action (update mode)
+              id: policy
+              uses: ./
+              with:
+                  mode: update
+                  working-directory: tests/data/action/dep-update
+                  reference-date: '2025-01-01'
+
+            - name: Assert dependency floor updated
+              env:
+                  CHANGED: ${{ steps.policy.outputs.changed }}
+                  PY_CHANGED: ${{ steps.policy.outputs.python-floor-changed }}
+                  FLOORS: ${{ steps.policy.outputs.dependency-floors-changed }}
+                  FILES: ${{ steps.policy.outputs.files-changed }}
+              run: |
+                  test "$CHANGED" = "true"
+                  test "$PY_CHANGED" = "false"
+                  echo "$FLOORS" | jq -e '.[] | select(.name == "numpy" and .new == "1.25.0")'
+                  echo "$FILES" | jq -e '. == ["pyproject.toml"]'
+                  grep -F '"numpy>=1.25.0", # comment must survive' tests/data/action/dep-update/pyproject.toml
+
+    action-python-update:
+        name: action test / python floor update
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Run action (update mode)
+              id: policy
+              uses: ./
+              with:
+                  mode: update
+                  working-directory: tests/data/action/python-update
+                  reference-date: '2025-01-01'
+
+            - name: Assert python floor updated
+              env:
+                  CHANGED: ${{ steps.policy.outputs.changed }}
+                  PY_CHANGED: ${{ steps.policy.outputs.python-floor-changed }}
+                  PLAN: ${{ steps.policy.outputs.plan }}
+              run: |
+                  test "$CHANGED" = "true"
+                  test "$PY_CHANGED" = "true"
+                  echo "$PLAN" | jq -e '.python_change.new_requires_python == ">=3.11"'
+                  grep -F 'requires-python = ">=3.11"' tests/data/action/python-update/pyproject.toml
+
+    action-with-lock:
+        name: action test / uv.lock regeneration
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Run action (update mode with lock)
+              id: policy
+              uses: ./
+              with:
+                  mode: update
+                  working-directory: tests/data/action/with-lock
+                  reference-date: '2025-01-01'
+                  lock: minimal
+
+            - name: Assert lockfile regenerated and consistent
+              env:
+                  FILES: ${{ steps.policy.outputs.files-changed }}
+              run: |
+                  echo "$FILES" | jq -e '. == ["pyproject.toml", "uv.lock"]'
+                  grep -F '"numpy>=1.25.0"' tests/data/action/with-lock/pyproject.toml
+                  ! grep -F 'version = "1.24.4"' tests/data/action/with-lock/uv.lock
+                  uv lock --check --project tests/data/action/with-lock
+
+    action-check-outdated:
+        name: action test / check-only mode
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Run action (check mode, expected to fail)
+              id: check
+              continue-on-error: true
+              uses: ./
+              with:
+                  mode: check
+                  working-directory: tests/data/action/dep-update
+                  reference-date: '2025-01-01'
+
+            - name: Run action (check mode, fail-on-outdated disabled)
+              id: check-soft
+              uses: ./
+              with:
+                  mode: check
+                  working-directory: tests/data/action/dep-update
+                  reference-date: '2025-01-01'
+                  fail-on-outdated: 'false'
+
+            - name: Assert check semantics
+              env:
+                  CHECK_OUTCOME: ${{ steps.check.outcome }}
+                  CHECK_CHANGED: ${{ steps.check.outputs.changed }}
+                  SOFT_CHANGED: ${{ steps.check-soft.outputs.changed }}
+              run: |
+                  test "$CHECK_OUTCOME" = "failure"
+                  test "$CHECK_CHANGED" = "true"
+                  test "$SOFT_CHANGED" = "true"
+                  # check mode must not modify the repository
+                  git diff --exit-code tests/data/action/dep-update
+
+    action-invalid-config:
+        name: action test / invalid configuration
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Run action (invalid config, expected to fail)
+              id: invalid
+              continue-on-error: true
+              uses: ./
+              with:
+                  mode: check
+                  working-directory: tests/data/action/invalid-config
+                  reference-date: '2025-01-01'
+
+            - name: Run action (invalid mode, expected to fail)
+              id: bad-mode
+              continue-on-error: true
+              uses: ./
+              with:
+                  mode: destroy
+                  working-directory: tests/data/action/compliant
+
+            - name: Assert failures
+              env:
+                  INVALID_OUTCOME: ${{ steps.invalid.outcome }}
+                  BAD_MODE_OUTCOME: ${{ steps.bad-mode.outcome }}
+              run: |
+                  test "$INVALID_OUTCOME" = "failure"
+                  test "$BAD_MODE_OUTCOME" = "failure"

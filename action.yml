@@ -1,0 +1,175 @@
+name: Dependency Support Policy
+description: >-
+    Manage rolling minimum-supported versions (Scientific Python SPEC 0 style)
+    for Python projects: raise dependency lower bounds and the requires-python
+    floor in pyproject.toml, optionally regenerating uv.lock.
+author: Isaac C. F. Wong
+branding:
+    icon: trending-up
+    color: blue
+
+inputs:
+    mode:
+        description: 'Operation mode: check, plan, or update.'
+        required: false
+        default: check
+    working-directory:
+        description: Directory containing the project to evaluate.
+        required: false
+        default: '.'
+    pyproject:
+        description: Path to pyproject.toml, relative to working-directory.
+        required: false
+        default: pyproject.toml
+    reference-date:
+        description: >-
+            Evaluate support windows as of this date (YYYY-MM-DD). Defaults to
+            today; set it for reproducible runs.
+        required: false
+        default: ''
+    policy:
+        description: Support policy to apply (currently only spec0).
+        required: false
+        default: ''
+    python-support-months:
+        description: Override the Python support window (calendar months).
+        required: false
+        default: ''
+    package-support-months:
+        description: Override the default package support window (months).
+        required: false
+        default: ''
+    package-overrides:
+        description: >-
+            Per-package support windows as newline-separated name=months
+            entries.
+        required: false
+        default: ''
+    include:
+        description: Only manage these packages (comma separated).
+        required: false
+        default: ''
+    exclude:
+        description: Never touch these packages (comma separated).
+        required: false
+        default: ''
+    groups:
+        description: >-
+            Comma-separated dependency collections to manage: project,
+            optional[:name], group[:name], all.
+        required: false
+        default: ''
+    manage-python:
+        description: Whether to manage the requires-python floor (true/false).
+        required: false
+        default: ''
+    lock:
+        description: 'uv.lock handling after updates: off, minimal, or upgrade.'
+        required: false
+        default: ''
+    fail-on-outdated:
+        description: In check mode, fail the step when drift is detected.
+        required: false
+        default: 'true'
+
+outputs:
+    changed:
+        description: >-
+            'true' if any managed floor is below the policy (check/plan) or was
+            updated (update).
+        value: ${{ steps.run.outputs.changed }}
+    python-floor-changed:
+        description: >-
+            'true' if the requires-python floor changed (or would change).
+        value: ${{ steps.run.outputs.python-floor-changed }}
+    dependency-floors-changed:
+        description: JSON list of {name, group, old, new} floor changes.
+        value: ${{ steps.run.outputs.dependency-floors-changed }}
+    files-changed:
+        description: JSON list of files written (update mode only).
+        value: ${{ steps.run.outputs.files-changed }}
+    plan:
+        description: Full machine-readable change plan as JSON.
+        value: ${{ steps.run.outputs.plan }}
+
+runs:
+    using: composite
+    steps:
+        - name: Install uv
+          uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+
+        - name: Run dependency-support-policy
+          id: run
+          shell: bash
+          env:
+              DSPA_MODE: ${{ inputs.mode }}
+              DSPA_WORKDIR: ${{ inputs.working-directory }}
+              DSPA_PYPROJECT: ${{ inputs.pyproject }}
+              DSPA_REFERENCE_DATE: ${{ inputs.reference-date }}
+              DSPA_POLICY: ${{ inputs.policy }}
+              DSPA_PYTHON_SUPPORT_MONTHS: ${{ inputs.python-support-months }}
+              DSPA_PACKAGE_SUPPORT_MONTHS: ${{ inputs.package-support-months }}
+              DSPA_PACKAGE_OVERRIDES: ${{ inputs.package-overrides }}
+              DSPA_INCLUDE: ${{ inputs.include }}
+              DSPA_EXCLUDE: ${{ inputs.exclude }}
+              DSPA_GROUPS: ${{ inputs.groups }}
+              DSPA_MANAGE_PYTHON: ${{ inputs.manage-python }}
+              DSPA_LOCK: ${{ inputs.lock }}
+              DSPA_FAIL_ON_OUTDATED: ${{ inputs.fail-on-outdated }}
+          run: |
+              case "$DSPA_MODE" in
+                  check | plan | update) ;;
+                  *)
+                      echo "error: invalid mode '$DSPA_MODE' (expected check, plan, or update)" >&2
+                      exit 2
+                      ;;
+              esac
+
+              args=("$DSPA_MODE" --pyproject "$DSPA_PYPROJECT")
+              if [ -n "$DSPA_REFERENCE_DATE" ]; then
+                  args+=(--reference-date "$DSPA_REFERENCE_DATE")
+              fi
+              if [ -n "$DSPA_POLICY" ]; then
+                  args+=(--policy "$DSPA_POLICY")
+              fi
+              if [ -n "$DSPA_PYTHON_SUPPORT_MONTHS" ]; then
+                  args+=(--python-support-months "$DSPA_PYTHON_SUPPORT_MONTHS")
+              fi
+              if [ -n "$DSPA_PACKAGE_SUPPORT_MONTHS" ]; then
+                  args+=(--package-support-months "$DSPA_PACKAGE_SUPPORT_MONTHS")
+              fi
+              if [ -n "$DSPA_PACKAGE_OVERRIDES" ]; then
+                  while IFS= read -r override; do
+                      if [ -n "${override// /}" ]; then
+                          args+=(--package-override "$override")
+                      fi
+                  done <<<"$DSPA_PACKAGE_OVERRIDES"
+              fi
+              if [ -n "$DSPA_INCLUDE" ]; then
+                  args+=(--include "$DSPA_INCLUDE")
+              fi
+              if [ -n "$DSPA_EXCLUDE" ]; then
+                  args+=(--exclude "$DSPA_EXCLUDE")
+              fi
+              if [ -n "$DSPA_GROUPS" ]; then
+                  args+=(--groups "$DSPA_GROUPS")
+              fi
+              if [ -n "$DSPA_MANAGE_PYTHON" ]; then
+                  args+=(--manage-python "$DSPA_MANAGE_PYTHON")
+              fi
+              if [ -n "$DSPA_LOCK" ]; then
+                  args+=(--lock "$DSPA_LOCK")
+              fi
+
+              cd "$DSPA_WORKDIR"
+              set +e
+              uv run --project "$GITHUB_ACTION_PATH" --frozen \
+                  dependency-support-policy "${args[@]}"
+              status=$?
+              set -e
+
+              if [ "$status" -eq 1 ] && [ "$DSPA_FAIL_ON_OUTDATED" != "true" ]; then
+                  echo "floors are outdated, but fail-on-outdated is disabled"
+                  exit 0
+              fi
+              exit "$status"
