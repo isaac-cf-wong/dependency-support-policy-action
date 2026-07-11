@@ -340,7 +340,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-build = [{ name = "hatch", specifier = ">=1.17.0" }]
+build = [{ name = "hatch", specifier = ">=1.17.1" }]
 dev = [
     { name = "mypy", specifier = ">=2.2.0" },
     { name = "prek", specifier = ">=0.4.9" },
