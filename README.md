@@ -210,4 +210,4 @@ uv build
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Released under the
-[MIT License](LICENSE).
+[BSD 3-Clause License](LICENSE).
