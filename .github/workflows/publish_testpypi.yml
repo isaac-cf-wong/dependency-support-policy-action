@@ -51,7 +51,7 @@ jobs:
                   enable-cache: 'true'
 
             - name: Install dependencies
-              run: uv sync --group dev --frozen
+              run: uv sync --group build --frozen
 
             - name: Set version for publishing
               env:
@@ -61,9 +61,11 @@ jobs:
                     # Use the tag, stripping the 'v' prefix if present
                     VERSION="${TAG_NAME#v}"
                   else
-                    # For untagged builds, take the dynamic version and strip
-                    # the +local part, which TestPyPI rejects
-                    VERSION=$(uv run --frozen python -c 'from importlib.metadata import version; print(version("dependency-support-policy"))' | sed 's/+.*//')
+                    # For untagged builds, compute the dynamic version fresh
+                    # from git via the build backend (a cached install can
+                    # report a stale version), then strip the +local part,
+                    # which TestPyPI rejects
+                    VERSION=$(uv run --frozen hatch version | sed 's/+.*//')
                   fi
                   echo "Publishing version $VERSION"
 
