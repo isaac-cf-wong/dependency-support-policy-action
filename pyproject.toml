@@ -19,8 +19,8 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
 ]
-requires-python = ">=3.12"
-dependencies = ["packaging>=24.2", "tomlkit>=0.14.0"]
+requires-python = ">=3.11"
+dependencies = ["packaging>=24.0", "tomlkit>=0.13.0"]
 
 [project.scripts]
 dependency-support-policy = "dependency_support_policy.cli:main"
