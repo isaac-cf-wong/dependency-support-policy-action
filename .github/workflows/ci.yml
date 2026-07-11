@@ -11,7 +11,9 @@ permissions:
     contents: read
 
 jobs:
-    lint:
+    zizmor:
+        # pre-commit.ci cannot run the zizmor hook (language: system), so the
+        # workflow security audit runs here instead.
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -25,10 +27,10 @@ jobs:
                   enable-cache: 'true'
 
             - name: Install dependencies
-              run: uv sync --all-groups --frozen
+              run: uv sync --group dev --frozen
 
-            - name: Run pre-commit on all files
-              run: uv run --frozen pre-commit run --all-files --show-diff-on-failure
+            - name: Run zizmor
+              run: uv run --frozen zizmor .github/workflows action.yml
 
     test:
         strategy:
