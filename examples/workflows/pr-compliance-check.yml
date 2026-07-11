@@ -1,0 +1,26 @@
+# Pull-request compliance check: fail PRs whose dependency floors (or
+# requires-python) have fallen below the support policy.
+#
+# Copy this file to .github/workflows/ in your repository. Pin the actions
+# to full commit SHAs in production.
+name: Support policy check
+
+on:
+    pull_request:
+        paths:
+            - pyproject.toml
+            - uv.lock
+
+permissions:
+    contents: read
+
+jobs:
+    check-floors:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Check support floors
+              uses: isaac-cf-wong/dependency-support-policy-action@v1
+              with:
+                  mode: check

@@ -1,0 +1,117 @@
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dependency-support-policy"
+dynamic = ["version"]
+authors = [{ name = "Isaac C. F. Wong", email = "chunfung.wong@kuleuven.be" }]
+description = "Manage rolling minimum-supported versions (SPEC 0 style) for Python projects, as a CLI and GitHub Action."
+readme = "README.md"
+license = { text = "BSD-3-Clause" }
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Build Tools",
+  "License :: OSI Approved :: BSD License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+requires-python = ">=3.11"
+dependencies = ["packaging>=24.2", "tomlkit>=0.13.2"]
+
+[project.scripts]
+dependency-support-policy = "dependency_support_policy.cli:main"
+
+[project.urls]
+Source = "https://github.com/isaac-cf-wong/dependency-support-policy-action"
+Tracker = "https://github.com/isaac-cf-wong/dependency-support-policy-action/issues"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.14.1",
+  "prek>=0.4.6",
+  "pytest>=8.3.4",
+  "pytest-cov>=6.0.0",
+  "ruff>=0.9.0",
+  "zizmor>=1.5.0",
+]
+release = ["git-cliff>=2.7.0"]
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "semver"
+# Action consumers run this project from a checkout without .git.
+fallback-version = "0.0.0"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dependency_support_policy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=dependency_support_policy --cov-report=term-missing --cov-fail-under=90"
+
+[tool.coverage.run]
+source = ["dependency_support_policy"]
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+pretty = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+lint.extend-select = [
+  "E",
+  "F",
+  "W",   # pycodestyle errors and warnings
+  "I",   # isort rules
+  "UP",  # pyupgrade rules
+  "C90", # McCabe complexity
+  "N",   # PEP8 naming
+  "B",   # Bugbear (opinionated checks)
+  "A",   # Flake8-builtins
+  "C4",  # Flake8-comprehensions
+  "PT",  # Flake8-pytest
+  "RUF", # Ruff-specific rules
+  "PL",  # Pylint rules
+  "SIM", # Similarities
+  "T10", # Debugger statements
+  "S",   # Security rules
+]
+lint.ignore = [
+  "E501", # Line length (handled by formatter)
+  "C901", # Overly strict complexity checks
+]
+lint.pylint.max-args = 10
+fix = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.ruff.lint.per-file-ignores]
+# S101: allow assert statements
+# ARG001: allow unused function arguments (common in fixtures)
+# PLC0415: allow import statements not at the top level
+# PLR2004: allow magic values in the unit tests
+# S603/S607: tests intentionally run subprocesses with partial paths
+"tests/*" = ["S101", "ARG001", "PLC0415", "PLR2004", "S603", "S607"]
