@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/ci.yml/badge.svg)](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/codeql.yml/badge.svg)](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/codeql.yml)
+[![Documentation](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/documentation.yml/badge.svg)](https://isaac-cf-wong.github.io/dependency-support-policy-action)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/isaac-cf-wong/dependency-support-policy-action/main.svg)](https://results.pre-commit.ci/latest/github/isaac-cf-wong/dependency-support-policy-action/main)
 [![PyPI Version](https://img.shields.io/pypi/v/dependency-support-policy)](https://pypi.org/project/dependency-support-policy/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/dependency-support-policy)](https://pypi.org/project/dependency-support-policy/)
@@ -111,21 +112,25 @@ the shorthands `optional`, `group`, and `all`.
 
 ### Inputs
 
-| Input                    | Default          | Description                                            |
-| ------------------------ | ---------------- | ------------------------------------------------------ |
-| `mode`                   | `check`          | `check`, `plan`, or `update`.                          |
-| `working-directory`      | `.`              | Directory containing the project.                      |
-| `pyproject`              | `pyproject.toml` | Path to `pyproject.toml`, relative to the directory.   |
-| `reference-date`         | today            | Evaluate windows as of this date (reproducible runs).  |
-| `policy`                 | `spec0`          | Support policy.                                        |
-| `python-support-months`  | policy default   | Python support window override.                        |
-| `package-support-months` | policy default   | Package support window override.                       |
-| `package-overrides`      | —                | Newline-separated `name=months` per-package windows.   |
-| `include` / `exclude`    | —                | Comma-separated package names.                         |
-| `groups`                 | `project`        | Comma-separated dependency collections.                |
-| `manage-python`          | `true`           | Manage the `requires-python` floor.                    |
-| `lock`                   | `off`            | uv.lock regeneration mode.                             |
-| `fail-on-outdated`       | `true`           | In `check` mode, fail the step when drift is detected. |
+All inputs are optional and default to empty, meaning "use the value from
+`[tool.dependency-support-policy]`, or the policy default". The table shows
+the **effective default** after that resolution.
+
+| Input                    | Effective default | Description                                            |
+| ------------------------ | ----------------- | ------------------------------------------------------ |
+| `mode`                   | `check`           | `check`, `plan`, or `update`.                          |
+| `working-directory`      | `.`               | Directory containing the project.                      |
+| `pyproject`              | `pyproject.toml`  | Path to `pyproject.toml`, relative to the directory.   |
+| `reference-date`         | today             | Evaluate windows as of this date (reproducible runs).  |
+| `policy`                 | `spec0`           | Support policy.                                        |
+| `python-support-months`  | policy default    | Python support window override.                        |
+| `package-support-months` | policy default    | Package support window override.                       |
+| `package-overrides`      | —                 | Newline-separated `name=months` per-package windows.   |
+| `include` / `exclude`    | —                 | Comma-separated package names.                         |
+| `groups`                 | `project`         | Comma-separated dependency collections.                |
+| `manage-python`          | `true`            | Manage the `requires-python` floor.                    |
+| `lock`                   | `off`             | uv.lock regeneration mode.                             |
+| `fail-on-outdated`       | `true`            | In `check` mode, fail the step when drift is detected. |
 
 ### Outputs
 
