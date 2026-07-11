@@ -7,6 +7,7 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/dependency-support-policy)](https://pypi.org/project/dependency-support-policy/)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](LICENSE)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![SPEC 0 — Minimum Supported Dependencies](https://img.shields.io/badge/SPEC-0-green?labelColor=%23004811&color=%235CA038)](https://scientific-python.org/specs/spec-0000/)
 
 Manage **rolling minimum-supported versions** for Python projects, as a
 standalone CLI and a GitHub Action.
