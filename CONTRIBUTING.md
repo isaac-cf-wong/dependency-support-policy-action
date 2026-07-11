@@ -8,7 +8,7 @@ Thanks for considering a contribution!
 git clone https://github.com/isaac-cf-wong/dependency-support-policy-action
 cd dependency-support-policy-action
 uv sync --all-groups
-uv run pre-commit install
+uv run prek install
 ```
 
 ## Canonical checks
@@ -16,7 +16,7 @@ uv run pre-commit install
 All of these must pass before a change is merged (CI runs the same):
 
 ```bash
-uv run pre-commit run --all-files
+uv run prek run --all-files
 uv run pytest
 uv run mypy src
 uv build

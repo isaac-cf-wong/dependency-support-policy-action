@@ -203,7 +203,7 @@ A floor is only honest if you test it. Recommended matrix:
 
 ```bash
 uv sync --all-groups
-uv run pre-commit run --all-files
+uv run prek run --all-files
 uv run pytest
 uv run mypy src
 uv build
