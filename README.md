@@ -1,5 +1,13 @@
 # dependency-support-policy-action
 
+[![CI](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/ci.yml/badge.svg)](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/codeql.yml/badge.svg)](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/codeql.yml)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/isaac-cf-wong/dependency-support-policy-action/main.svg)](https://results.pre-commit.ci/latest/github/isaac-cf-wong/dependency-support-policy-action/main)
+[![PyPI Version](https://img.shields.io/pypi/v/dependency-support-policy)](https://pypi.org/project/dependency-support-policy/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/dependency-support-policy)](https://pypi.org/project/dependency-support-policy/)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](LICENSE)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 Manage **rolling minimum-supported versions** for Python projects, as a
 standalone CLI and a GitHub Action.
 
