@@ -9,11 +9,11 @@ from pathlib import Path
 import pytest
 import tomlkit
 
-from dependency_support_policy_action import planner
-from dependency_support_policy_action.config import LockMode, RunConfig
-from dependency_support_policy_action.errors import LockfileError, RegistryError
-from dependency_support_policy_action.planner import apply_plan, build_plan
-from dependency_support_policy_action.pyproject_edit import load_document
+from dependency_support_policy import planner
+from dependency_support_policy.config import LockMode, RunConfig
+from dependency_support_policy.errors import LockfileError, RegistryError
+from dependency_support_policy.planner import apply_plan, build_plan
+from dependency_support_policy.pyproject_edit import load_document
 from tests.conftest import NUMPY_SERIES, FakeFetcher, sr
 
 REFERENCE = date(2025, 1, 1)

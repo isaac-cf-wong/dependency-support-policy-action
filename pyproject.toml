@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [project]
-name = "dependency-support-policy-action"
-version = "0.1.0"
+name = "dependency-support-policy"
+dynamic = ["version"]
 authors = [{ name = "Isaac C. F. Wong", email = "chunfung.wong@kuleuven.be" }]
 description = "Manage rolling minimum-supported versions (SPEC 0 style) for Python projects, as a CLI and GitHub Action."
 readme = "README.md"
@@ -24,7 +24,7 @@ requires-python = ">=3.11"
 dependencies = ["packaging>=24.2", "tomlkit>=0.13.2"]
 
 [project.scripts]
-dependency-support-policy = "dependency_support_policy_action.cli:main"
+dependency-support-policy = "dependency_support_policy.cli:main"
 
 [project.urls]
 Source = "https://github.com/isaac-cf-wong/dependency-support-policy-action"
@@ -41,15 +41,24 @@ dev = [
 ]
 release = ["git-cliff>=2.7.0"]
 
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "semver"
+# Action consumers run this project from a checkout without .git.
+fallback-version = "0.0.0"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
 [tool.hatch.build.targets.wheel]
-packages = ["src/dependency_support_policy_action"]
+packages = ["src/dependency_support_policy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=dependency_support_policy_action --cov-report=term-missing --cov-fail-under=90"
+addopts = "--cov=dependency_support_policy --cov-report=term-missing --cov-fail-under=90"
 
 [tool.coverage.run]
-source = ["dependency_support_policy_action"]
+source = ["dependency_support_policy"]
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]

@@ -146,8 +146,7 @@ toml = [
 ]
 
 [[package]]
-name = "dependency-support-policy-action"
-version = "0.1.0"
+name = "dependency-support-policy"
 source = { editable = "." }
 dependencies = [
     { name = "packaging" },

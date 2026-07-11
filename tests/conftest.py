@@ -8,8 +8,8 @@ from datetime import date
 from packaging.utils import canonicalize_name
 from packaging.version import Version
 
-from dependency_support_policy_action.errors import RegistryError
-from dependency_support_policy_action.registry import SeriesRelease, series_key
+from dependency_support_policy.errors import RegistryError
+from dependency_support_policy.registry import SeriesRelease, series_key
 
 
 def sr(version: str, released: str) -> SeriesRelease:

@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 import tomlkit
 
-from dependency_support_policy_action.config import LockMode, load_config, parse_package_overrides
-from dependency_support_policy_action.errors import ConfigError
+from dependency_support_policy.config import LockMode, load_config, parse_package_overrides
+from dependency_support_policy.errors import ConfigError
 
 REFERENCE = date(2025, 1, 1)
 PYPROJECT = Path("pyproject.toml")

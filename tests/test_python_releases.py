@@ -6,7 +6,7 @@ from datetime import date
 
 from packaging.version import Version
 
-from dependency_support_policy_action.python_releases import python_series, table_may_be_stale
+from dependency_support_policy.python_releases import python_series, table_may_be_stale
 
 
 class TestPythonSeries:

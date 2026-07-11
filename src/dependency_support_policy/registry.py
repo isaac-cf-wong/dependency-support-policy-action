@@ -25,7 +25,7 @@ from packaging.version import InvalidVersion, Version
 from . import __version__
 from .errors import RegistryError
 
-_USER_AGENT = f"dependency-support-policy-action/{__version__}"
+_USER_AGENT = f"dependency-support-policy/{__version__}"
 
 
 @dataclass(frozen=True, order=True)

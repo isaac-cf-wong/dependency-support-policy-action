@@ -48,7 +48,7 @@ in `tests/data/action/` (these hit the real PyPI JSON API with a fixed
 ## Adding a support policy
 
 1. Subclass `SupportPolicy` in
-   `src/dependency_support_policy_action/policies.py` and register it in
+   `src/dependency_support_policy/policies.py` and register it in
    `_POLICIES`.
 2. Add tests for its windows and floor behaviour.
 3. Document it in the README.

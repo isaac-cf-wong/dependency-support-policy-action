@@ -1,4 +1,4 @@
-"""Allow ``python -m dependency_support_policy_action``."""
+"""Allow ``python -m dependency_support_policy``."""
 
 from __future__ import annotations
 

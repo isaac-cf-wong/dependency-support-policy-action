@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from dependency_support_policy_action import lockfile
-from dependency_support_policy_action.config import LockMode
-from dependency_support_policy_action.errors import LockfileError
-from dependency_support_policy_action.lockfile import regenerate_lockfile
+from dependency_support_policy import lockfile
+from dependency_support_policy.config import LockMode
+from dependency_support_policy.errors import LockfileError
+from dependency_support_policy.lockfile import regenerate_lockfile
 
 
 def make_stub_uv(tmp_path: Path, script_body: str) -> str:

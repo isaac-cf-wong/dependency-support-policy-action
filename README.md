@@ -37,14 +37,17 @@ The built-in `spec0` policy implements Scientific Python SPEC 0 defaults:
 Both windows, and per-package windows, are configurable (see below), so you
 can follow SPEC 0 strictly, or run "SPEC 0 with a 30-month window for numpy".
 The policy layer is extensible: additional named policies can be registered
-in `dependency_support_policy_action.policies`.
+in `dependency_support_policy.policies`.
 
 ## CLI usage
 
+The CLI is published on PyPI as
+[`dependency-support-policy`](https://pypi.org/project/dependency-support-policy/):
+
 ```bash
-uvx --from dependency-support-policy-action dependency-support-policy check --reference-date 2026-07-01
-dependency-support-policy plan   # prints the machine-readable change plan (JSON)
-dependency-support-policy update --lock minimal
+uvx dependency-support-policy check --reference-date 2026-07-01
+uvx dependency-support-policy plan   # prints the machine-readable change plan (JSON)
+uvx dependency-support-policy update --lock minimal
 ```
 
 Modes:

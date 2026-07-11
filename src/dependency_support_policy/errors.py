@@ -1,4 +1,4 @@
-"""Exception hierarchy for dependency-support-policy-action."""
+"""Exception hierarchy for dependency-support-policy."""
 
 from __future__ import annotations
 

@@ -6,8 +6,8 @@ from datetime import date
 
 import pytest
 
-from dependency_support_policy_action.dates import months_before, parse_iso_date
-from dependency_support_policy_action.errors import ConfigError
+from dependency_support_policy.dates import months_before, parse_iso_date
+from dependency_support_policy.errors import ConfigError
 
 
 class TestMonthsBefore:

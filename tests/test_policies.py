@@ -7,8 +7,8 @@ from datetime import date
 import pytest
 from packaging.version import Version
 
-from dependency_support_policy_action.errors import ConfigError, PolicyError
-from dependency_support_policy_action.policies import available_policies, compute_floor, get_policy
+from dependency_support_policy.errors import ConfigError, PolicyError
+from dependency_support_policy.policies import available_policies, compute_floor, get_policy
 from tests.conftest import NUMPY_SERIES, sr
 
 

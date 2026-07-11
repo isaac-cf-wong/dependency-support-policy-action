@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from dependency_support_policy_action import cli
-from dependency_support_policy_action.cli import EXIT_DRIFT, EXIT_ERROR, EXIT_OK, main
-from dependency_support_policy_action.errors import LockfileError
+from dependency_support_policy import cli
+from dependency_support_policy.cli import EXIT_DRIFT, EXIT_ERROR, EXIT_OK, main
+from dependency_support_policy.errors import LockfileError
 from tests.conftest import FakeFetcher
 from tests.test_planner import PYPROJECT, make_fetcher
 
@@ -99,7 +99,7 @@ class TestUpdateMode:
         def failing_regenerate(*args: object, **kwargs: object) -> bool:
             raise LockfileError("resolution failed")
 
-        monkeypatch.setattr("dependency_support_policy_action.planner.regenerate_lockfile", failing_regenerate)
+        monkeypatch.setattr("dependency_support_policy.planner.regenerate_lockfile", failing_regenerate)
         assert run("update", outdated_project, "--lock", "minimal") == EXIT_ERROR
         assert "resolution failed" in capsys.readouterr().err
         assert outdated_project.read_text(encoding="utf-8") == PYPROJECT

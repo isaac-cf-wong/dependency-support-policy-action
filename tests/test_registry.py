@@ -11,8 +11,8 @@ from typing import Any, ClassVar
 import pytest
 from packaging.version import Version
 
-from dependency_support_policy_action.errors import RegistryError
-from dependency_support_policy_action.registry import (
+from dependency_support_policy.errors import RegistryError
+from dependency_support_policy.registry import (
     PyPIReleaseFetcher,
     build_series,
     parse_pypi_payload,

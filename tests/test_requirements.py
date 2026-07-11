@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from packaging.version import Version
 
-from dependency_support_policy_action.requirements import (
+from dependency_support_policy.requirements import (
     RewriteStatus,
     requirement_name,
     rewrite_requirement_lower_bound,

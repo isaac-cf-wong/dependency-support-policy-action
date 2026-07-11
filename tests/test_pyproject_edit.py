@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 import tomlkit
 
-from dependency_support_policy_action.errors import ConfigError
-from dependency_support_policy_action.pyproject_edit import (
+from dependency_support_policy.errors import ConfigError
+from dependency_support_policy.pyproject_edit import (
     available_groups,
     dump_document,
     get_requires_python,
