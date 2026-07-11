@@ -1,8 +1,7 @@
 name: Dependency Support Policy
 description: >-
-    Manage rolling minimum-supported versions (Scientific Python SPEC 0 style)
-    for Python projects: raise dependency lower bounds and the requires-python
-    floor in pyproject.toml, optionally regenerating uv.lock.
+    Raise dependency and requires-python floors in pyproject.toml to a rolling
+    support window (Scientific Python SPEC 0).
 author: Isaac C. F. Wong
 branding:
     icon: trending-up
