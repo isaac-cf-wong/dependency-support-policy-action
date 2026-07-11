@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/ci.yml/badge.svg)](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/codeql.yml/badge.svg)](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/codeql.yml)
+[![Documentation](https://github.com/isaac-cf-wong/dependency-support-policy-action/actions/workflows/documentation.yml/badge.svg)](https://isaac-cf-wong.github.io/dependency-support-policy-action)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/isaac-cf-wong/dependency-support-policy-action/main.svg)](https://results.pre-commit.ci/latest/github/isaac-cf-wong/dependency-support-policy-action/main)
 [![PyPI Version](https://img.shields.io/pypi/v/dependency-support-policy)](https://pypi.org/project/dependency-support-policy/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/dependency-support-policy)](https://pypi.org/project/dependency-support-policy/)

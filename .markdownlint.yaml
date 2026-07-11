@@ -36,3 +36,10 @@ MD032: true
 
 # Allow multiple top-level headings
 MD025: false
+
+# pymdownx/Material admonitions (`!!! note`, `!!! example`, ...) indent the
+# body; MD046 misreads that as an indented code block. Fenced blocks remain
+# the norm everywhere else; this only silences that false positive.
+MD046:
+    enabled: false
+    style: fenced
