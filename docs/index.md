@@ -24,6 +24,7 @@ minimums are never lowered.
 === "GitHub Action"
 
     ```yaml
+    # Pin to a full commit SHA in production instead of the mutable tag.
     - uses: isaac-cf-wong/dependency-support-policy-action@v1
       id: policy
       with:

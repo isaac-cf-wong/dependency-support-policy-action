@@ -4,7 +4,7 @@ The CLI is published on PyPI as
 [`dependency-support-policy`](https://pypi.org/project/dependency-support-policy/):
 
 ```bash
-uvx dependency-support-policy check --reference-date 2026-07-01
+uvx dependency-support-policy check --reference-date 2026-07-11
 ```
 
 ## Modes
@@ -22,21 +22,21 @@ regeneration failures.
 
 All modes accept the same flags:
 
-| Flag                         | Meaning                                                   |
-| ---------------------------- | --------------------------------------------------------- |
-| `--pyproject PATH`           | Path to `pyproject.toml` (default `./pyproject.toml`).    |
-| `--reference-date DATE`      | Evaluate windows as of `YYYY-MM-DD`; defaults to today.   |
-| `--policy NAME`              | Support policy (currently `spec0`).                       |
-| `--python-support-months N`  | Override the Python window.                               |
-| `--package-support-months N` | Override the default package window.                      |
-| `--package-override N=M`     | Per-package window (repeatable).                          |
-| `--include NAMES`            | Only manage these packages (comma separated, repeatable). |
-| `--exclude NAMES`            | Never touch these packages.                               |
-| `--groups LIST`              | Dependency collections to manage.                         |
-| `--manage-python true/false` | Manage the `requires-python` floor.                       |
-| `--lock off/minimal/upgrade` | uv.lock handling after updates.                           |
-| `--output-json PATH`         | Also write the change plan JSON to a file.                |
-| `--quiet`                    | Suppress the human-readable summary.                      |
+| Flag                         | Meaning                                                       |
+| ---------------------------- | ------------------------------------------------------------- |
+| `--pyproject PATH`           | Path to `pyproject.toml` (default `./pyproject.toml`).        |
+| `--reference-date DATE`      | Evaluate windows as of `YYYY-MM-DD`; defaults to today (UTC). |
+| `--policy NAME`              | Support policy (currently `spec0`).                           |
+| `--python-support-months N`  | Override the Python window.                                   |
+| `--package-support-months N` | Override the default package window.                          |
+| `--package-override N=M`     | Per-package window (repeatable).                              |
+| `--include NAMES`            | Only manage these packages (comma separated, repeatable).     |
+| `--exclude NAMES`            | Never touch these packages.                                   |
+| `--groups LIST`              | Dependency collections to manage.                             |
+| `--manage-python true/false` | Manage the `requires-python` floor.                           |
+| `--lock off/minimal/upgrade` | uv.lock handling after updates.                               |
+| `--output-json PATH`         | Also write the change plan JSON to a file.                    |
+| `--quiet`                    | Suppress the human-readable summary.                          |
 
 ## Reproducible evaluation
 
