@@ -32,10 +32,10 @@ Tracker = "https://github.com/isaac-cf-wong/dependency-support-policy-action/iss
 
 [dependency-groups]
 dev = [
-  "mypy>=1.20.2",
+  "mypy>=2.2.0",
   "prek>=0.4.9",
-  "pytest>=8.4.2",
-  "pytest-cov>=6.3.0",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
   "ruff>=0.15.21",
   "zizmor>=1.26.1",
 ]
