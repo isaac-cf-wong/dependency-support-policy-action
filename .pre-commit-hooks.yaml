@@ -1,0 +1,15 @@
+- id: dependency-support-policy
+  name: dependency support policy (check)
+  description: Fail if dependency or requires-python floors drift below the support policy.
+  entry: dependency-support-policy check
+  language: python
+  pass_filenames: false
+  files: (^|/)pyproject\.toml$
+
+- id: dependency-support-policy-update
+  name: dependency support policy (update)
+  description: Raise dependency and requires-python floors to the support policy.
+  entry: dependency-support-policy update
+  language: python
+  pass_filenames: false
+  files: (^|/)pyproject\.toml$
