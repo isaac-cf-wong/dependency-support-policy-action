@@ -162,6 +162,46 @@ Ready-to-copy workflows live in [`examples/workflows/`](examples/workflows):
 - [`update-with-lockfile.yml`](examples/workflows/update-with-lockfile.yml) —
   update `pyproject.toml` **and** `uv.lock` in a single PR.
 
+## pre-commit hook
+
+The CLI is also published as a [pre-commit](https://pre-commit.com) hook. Add
+it to `.pre-commit-config.yaml`:
+
+```yaml
+- repo: https://github.com/isaac-cf-wong/dependency-support-policy-action
+  rev: v0.1.1 # pin a tag; `pre-commit autoupdate` bumps it
+  hooks:
+      - id: dependency-support-policy
+```
+
+Two hook ids are available:
+
+| Hook id                            | Mode     | Behaviour                                           |
+| ---------------------------------- | -------- | --------------------------------------------------- |
+| `dependency-support-policy`        | `check`  | Fails the commit if floors drifted below the policy |
+| `dependency-support-policy-update` | `update` | Rewrites `pyproject.toml` to the current floors     |
+
+Both trigger on changes to any `pyproject.toml` and run once at the repo root
+(`pass_filenames: false`). Pass CLI flags via `args:` — for example, to target
+a nested project or pin a reference date:
+
+```yaml
+hooks:
+    - id: dependency-support-policy
+      args:
+          [
+              --pyproject,
+              packages/foo/pyproject.toml,
+              --reference-date,
+              '2026-07-01',
+          ]
+```
+
+Note: the hook resolves CPython and package release dates, so it needs network
+access when it runs. In offline or air-gapped environments prefer the GitHub
+Action, or pin `--reference-date` and extend the built-in tables via
+`[tool.dependency-support-policy.python-releases]`.
+
 ## uv.lock handling
 
 With `lock: minimal` (recommended), `uv lock` re-locks after the pyproject
