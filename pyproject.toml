@@ -40,7 +40,7 @@ dev = [
   "zizmor>=1.27.0",
 ]
 build = ["hatch>=1.17.1"]
-docs = ["mkdocstrings-python>=2.0.5", "zensical>=0.0.50"]
+docs = ["mkdocstrings-python>=2.0.5", "zensical>=0.0.51"]
 release = ["git-cliff>=2.13.1"]
 
 [tool.dependency-support-policy]
