@@ -6,7 +6,7 @@ import io
 import json
 import urllib.error
 from datetime import date
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
 import pytest
 from packaging.version import Version
@@ -81,7 +81,7 @@ class TestParsePyPIPayload:
 
 
 class _FakeResponse(io.BytesIO):
-    def __enter__(self) -> _FakeResponse:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args: object) -> None:
