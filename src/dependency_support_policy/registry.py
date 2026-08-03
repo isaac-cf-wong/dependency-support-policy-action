@@ -92,7 +92,7 @@ def parse_pypi_payload(payload: Mapping[str, Any]) -> list[SeriesRelease]:
             uploaded = file_info.get("upload_time_iso_8601")
             if not uploaded:
                 continue
-            upload_dates.append(datetime.fromisoformat(uploaded.replace("Z", "+00:00")).date())
+            upload_dates.append(datetime.fromisoformat(uploaded).date())
         if upload_dates:
             version_dates[version] = min(upload_dates)
     return build_series(version_dates)
