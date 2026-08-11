@@ -39,7 +39,7 @@ dev = [
   "ruff>=0.16.2",
   "zizmor>=1.29.0",
 ]
-build = ["hatch>=1.17.1"]
+build = ["hatch>=1.18.0"]
 docs = ["mkdocstrings-python>=2.0.5", "zensical>=0.0.53"]
 release = ["git-cliff>=2.13.1"]
 
