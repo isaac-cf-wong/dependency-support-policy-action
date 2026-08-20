@@ -36,7 +36,7 @@ dev = [
   "prek>=0.4.14",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
-  "ruff>=0.16.3",
+  "ruff>=0.16.4",
   "zizmor>=1.29.0",
 ]
 build = ["hatch>=1.18.0"]
