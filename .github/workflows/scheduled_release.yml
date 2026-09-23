@@ -28,12 +28,15 @@ jobs:
     ci:
         needs: check_new_commits
         if: ${{ needs.check_new_commits.outputs.has-changes == 'true' }}
-        uses: $/.github/workflows/ci.yml
+        # GitHub's $/ self-repository syntax is rejected for reusable
+        # workflow calls; keep the workspace-relative form.
+        uses: ./.github/workflows/ci.yml # zizmor: ignore[self-repository]
 
     codeql:
         needs: check_new_commits
         if: ${{ needs.check_new_commits.outputs.has-changes == 'true' }}
-        uses: $/.github/workflows/codeql.yml
+        # zizmor: ignore[self-repository]
+        uses: ./.github/workflows/codeql.yml # zizmor: ignore[self-repository]
         permissions:
             security-events: write
 
@@ -95,7 +98,8 @@ jobs:
 
     release:
         needs: create_tag
-        uses: $/.github/workflows/release.yml
+        # zizmor: ignore[self-repository]
+        uses: ./.github/workflows/release.yml # zizmor: ignore[self-repository]
         permissions:
             contents: write
         with:
