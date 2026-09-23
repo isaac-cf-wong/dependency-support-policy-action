@@ -28,12 +28,12 @@ jobs:
     ci:
         needs: check_new_commits
         if: ${{ needs.check_new_commits.outputs.has-changes == 'true' }}
-        uses: ./.github/workflows/ci.yml
+        uses: $/.github/workflows/ci.yml
 
     codeql:
         needs: check_new_commits
         if: ${{ needs.check_new_commits.outputs.has-changes == 'true' }}
-        uses: ./.github/workflows/codeql.yml
+        uses: $/.github/workflows/codeql.yml
         permissions:
             security-events: write
 
@@ -95,7 +95,7 @@ jobs:
 
     release:
         needs: create_tag
-        uses: ./.github/workflows/release.yml
+        uses: $/.github/workflows/release.yml
         permissions:
             contents: write
         with:

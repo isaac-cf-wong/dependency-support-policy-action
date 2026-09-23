@@ -121,7 +121,7 @@ jobs:
 
             - name: Run action (check mode)
               id: policy
-              uses: ./
+              uses: $/
               with:
                   mode: check
                   working-directory: tests/data/action/compliant
@@ -145,7 +145,7 @@ jobs:
 
             - name: Run action (update mode)
               id: policy
-              uses: ./
+              uses: $/
               with:
                   mode: update
                   working-directory: tests/data/action/dep-update
@@ -174,7 +174,7 @@ jobs:
 
             - name: Run action (update mode)
               id: policy
-              uses: ./
+              uses: $/
               with:
                   mode: update
                   working-directory: tests/data/action/python-update
@@ -201,7 +201,7 @@ jobs:
 
             - name: Run action (update mode with lock)
               id: policy
-              uses: ./
+              uses: $/
               with:
                   mode: update
                   working-directory: tests/data/action/with-lock
@@ -228,7 +228,7 @@ jobs:
             - name: Run action (check mode, expected to fail)
               id: check
               continue-on-error: true
-              uses: ./
+              uses: $/
               with:
                   mode: check
                   working-directory: tests/data/action/dep-update
@@ -236,7 +236,7 @@ jobs:
 
             - name: Run action (check mode, fail-on-outdated disabled)
               id: check-soft
-              uses: ./
+              uses: $/
               with:
                   mode: check
                   working-directory: tests/data/action/dep-update
@@ -266,7 +266,7 @@ jobs:
             - name: Run action (invalid config, expected to fail)
               id: invalid
               continue-on-error: true
-              uses: ./
+              uses: $/
               with:
                   mode: check
                   working-directory: tests/data/action/invalid-config
@@ -275,7 +275,7 @@ jobs:
             - name: Run action (invalid mode, expected to fail)
               id: bad-mode
               continue-on-error: true
-              uses: ./
+              uses: $/
               with:
                   mode: destroy
                   working-directory: tests/data/action/compliant
