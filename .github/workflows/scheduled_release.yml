@@ -19,11 +19,20 @@ jobs:
                   fetch-depth: 0
                   persist-credentials: false
 
-            - name: Check for new commits
+            # Release only when something users of the action or the pre-commit
+            # hooks receive changed since the latest tag: the Python package
+            # (sources, packaging config, readme, license), action.yml or
+            # .pre-commit-hooks.yaml. Dev-dependency bumps, lock-file maintenance,
+            # CI, tests and docs do not count.
+            - name: Check for package changes
               id: check_commits
-              uses: isaac-cf-wong/detect-git-changes-action@ecc6bf915a7987eb27f70d560c8067a69b943cb5 # v0.0.14
+              uses: isaac-cf-wong/detect-git-changes-action@fd41a9c5553a9148e8f78399855fd19e04801501 # v0.2.0
               with:
                   use-latest-tag: true
+                  preset: python
+                  paths: |
+                      action.yml
+                      .pre-commit-hooks.yaml
 
     ci:
         needs: check_new_commits

@@ -40,8 +40,10 @@ in `tests/data/action/` (these hit the real PyPI JSON API with a fixed
 ## Release process
 
 - Every push to `main` refreshes the **draft release** (`next-release`).
-- A **scheduled release** runs every Tuesday: if there are new commits since
-  the last tag, CI and CodeQL are re-run, a semver tag is derived from the
+- A **scheduled release** runs every Tuesday: if something users receive has
+  changed since the last tag (the Python package, `action.yml` or
+  `.pre-commit-hooks.yaml`; not CI, tests, docs or dev-dependency bumps), CI
+  and CodeQL are re-run, a semver tag is derived from the
   conventional commits, the GitHub release is published, and the floating
   major tag (e.g. `v1`) is moved.
 - The static `version` in `pyproject.toml` is cosmetic; release versions come
