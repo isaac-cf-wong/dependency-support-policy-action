@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import tomlkit
+from packaging.version import Version
 from tomlkit import TOMLDocument
 from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import Array
@@ -138,3 +140,38 @@ def get_requires_python(document: TOMLDocument) -> str | None:
 
 def set_requires_python(document: TOMLDocument, text: str) -> None:
     document["project"]["requires-python"] = text
+
+
+_PYTHON_CLASSIFIER_RE = re.compile(r"^Programming Language :: Python :: (\d+)\.(\d+)$")
+
+
+def stale_python_classifiers(document: TOMLDocument, floor: Version) -> list[str]:
+    """``Programming Language :: Python :: X.Y`` classifiers older than ``floor``."""
+    return [text for _, text in _stale_classifier_entries(document, floor)]
+
+
+def remove_python_classifiers(document: TOMLDocument, floor: Version) -> list[str]:
+    """Delete the classifiers :func:`stale_python_classifiers` reports; return them.
+
+    Other classifiers (``Python :: 3``, ``Python :: 3 :: Only``, licences, ...)
+    are never touched.
+    """
+    entries = _stale_classifier_entries(document, floor)
+    if entries:
+        array = document["project"]["classifiers"]
+        for index, _ in reversed(entries):
+            del array[index]
+    return [text for _, text in entries]
+
+
+def _stale_classifier_entries(document: TOMLDocument, floor: Version) -> list[tuple[int, str]]:
+    project = document.get("project")
+    classifiers = project.get("classifiers") if isinstance(project, dict) else None
+    if not isinstance(classifiers, Array):
+        return []
+    entries = []
+    for index, value in enumerate(classifiers):
+        match = _PYTHON_CLASSIFIER_RE.match(value) if isinstance(value, str) else None
+        if match is not None and (int(match[1]), int(match[2])) < (floor.major, floor.minor):
+            entries.append((index, str(value)))
+    return entries

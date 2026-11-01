@@ -143,3 +143,38 @@ class TestWriteTextAtomic:
         path.chmod(0o600)
         write_text_atomic(path, "two\n")
         assert path.stat().st_mode & 0o777 == 0o600
+
+
+CLASSIFIED = """\
+[project]
+name = "demo"
+classifiers = [
+  "License :: OSI Approved",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",  # old
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+"""
+
+
+def test_remove_python_classifiers_below_floor() -> None:
+    from packaging.version import Version
+
+    from dependency_support_policy.pyproject_edit import remove_python_classifiers, stale_python_classifiers
+
+    document = tomlkit.parse(CLASSIFIED)
+    floor = Version("3.12")
+    assert stale_python_classifiers(document, floor) == ["Programming Language :: Python :: 3.11"]
+    assert remove_python_classifiers(document, floor) == ["Programming Language :: Python :: 3.11"]
+    assert dump_document(document) == CLASSIFIED.replace('  "Programming Language :: Python :: 3.11",  # old\n', "")
+
+
+def test_remove_python_classifiers_without_classifiers() -> None:
+    from packaging.version import Version
+
+    from dependency_support_policy.pyproject_edit import remove_python_classifiers
+
+    document = tomlkit.parse('[project]\nname = "demo"\n')
+    assert remove_python_classifiers(document, Version("3.12")) == []

@@ -42,6 +42,9 @@ The built-in `spec0` policy implements Scientific Python SPEC 0 defaults:
 
 - **Python**: support window 36 months — `requires-python` is floored at the
   oldest CPython minor series released within 3 years.
+  When the floor rises, `Programming Language :: Python :: X.Y` classifiers and
+  `python-version` entries in `.github/workflows/*.yml` below it are updated too
+  (matrix entries dropped; lone pins raised to the floor).
 - **Packages**: support window 24 months.
 
 Both windows, and per-package windows, are configurable (see below), so you

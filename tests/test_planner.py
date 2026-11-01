@@ -245,3 +245,59 @@ class TestApplyPlan:
             apply_plan(document, plan, run_config)
         assert path.read_text(encoding="utf-8") == PYPROJECT
         assert lock_path.read_text(encoding="utf-8") == "old lock\n"
+
+
+class TestPythonFloorCompanions:
+    """Raising requires-python also updates classifiers and CI matrices."""
+
+    CONTENT = (
+        '[project]\nname = "demo"\nrequires-python = ">=3.9"\n'
+        'classifiers = [\n  "Programming Language :: Python :: 3.9",\n  "Programming Language :: Python :: 3.13",\n]\n'
+        "dependencies = []\n"
+    )
+    CI = "matrix:\n  python-version: ['3.9', '3.12', '3.13']\n"
+
+    def _project(self, tmp_path: Path) -> Path:
+        path = tmp_path / "pyproject.toml"
+        path.write_text(self.CONTENT, encoding="utf-8")
+        workflows = tmp_path / ".github" / "workflows"
+        workflows.mkdir(parents=True)
+        (workflows / "ci.yml").write_text(self.CI, encoding="utf-8")
+        return path
+
+    def test_plan_reports_and_apply_writes(self, tmp_path: Path) -> None:
+        path = self._project(tmp_path)
+        document = load_document(path)
+        run_config = config(pyproject=path)
+        plan = build_plan(document, run_config, make_fetcher())
+        change = plan.python_change
+        assert change is not None
+        assert change.removed_classifiers == ("Programming Language :: Python :: 3.9",)
+        assert [w.to_dict() for w in change.workflow_changes] == [
+            {"file": ".github/workflows/ci.yml", "removed": ["3.9"], "raised": []}
+        ]
+        # planning writes nothing
+        assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == self.CI
+
+        result = apply_plan(document, plan, run_config)
+        assert result.changed_files == ["pyproject.toml", ".github/workflows/ci.yml"]
+        assert "3.9" not in path.read_text(encoding="utf-8").split("classifiers")[1]
+        assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == (
+            "matrix:\n  python-version: ['3.12', '3.13']\n"
+        )
+
+    def test_lock_failure_restores_workflows(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        path = self._project(tmp_path)
+        (tmp_path / "uv.lock").write_text("old\n", encoding="utf-8")
+
+        def boom(project_dir: Path, mode: LockMode, **kwargs: object) -> bool:
+            raise RuntimeError("lock failed")
+
+        monkeypatch.setattr(planner, "regenerate_lockfile", boom)
+        document = load_document(path)
+        run_config = config(pyproject=path, lock=LockMode.MINIMAL)
+        plan = build_plan(document, run_config, make_fetcher())
+        with pytest.raises(RuntimeError):
+            apply_plan(document, plan, run_config)
+        assert path.read_text(encoding="utf-8") == self.CONTENT
+        assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == self.CI
