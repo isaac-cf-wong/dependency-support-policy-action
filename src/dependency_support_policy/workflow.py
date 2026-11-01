@@ -180,6 +180,16 @@ def _entry_bounds(lines: list[str], idx: int, key_col: int, dash_col: int) -> tu
     return start, end
 
 
+_EMBEDDED_RE = re.compile(r"[\"']?python-version[\"']?[ \t]*:[ \t]*(?P<value>[^,}\]#]*)")
+
+
+def _embedded_stale_version(line: str, floor: Version) -> bool:
+    """True if a non-key line (e.g. a flow mapping) sets ``python-version`` below the floor."""
+    if line.lstrip().startswith("#"):
+        return False
+    return any(_below(_unquote(m["value"])[1], floor) for m in _EMBEDDED_RE.finditer(line))
+
+
 _Seen = dict[tuple[int, str], tuple[int, int, str | None]]
 
 
@@ -244,6 +254,8 @@ def update_workflow_text(text: str, floor: Version) -> tuple[str, WorkflowChange
     while i < len(lines):
         key = _KEY_RE.match(lines[i])
         if key is None:
+            if _embedded_stale_version(lines[i], floor):
+                change.unsupported.append(f"line {i + 1}: python-version inside a flow mapping not rewritten")
             i += 1
             continue
         rest = key["rest"]

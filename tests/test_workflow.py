@@ -196,3 +196,16 @@ def test_exclude_with_dotted_anchor_or_tag_untouched() -> None:
     for header in ("exclude: &ex.v1", "exclude: !!seq &a.b-c"):
         text = f"{header}\n  - os: w\n    python-version: '3.12'\n"
         assert update(text)[0] == text
+
+
+def test_flow_mapping_with_stale_version_is_reported() -> None:
+    text = "include: [{os: linux, python-version: '3.12'}, {python-version: \"3.13\"}]\n"
+    new, change = update_workflow_text(text, FLOOR)
+    assert new == text
+    assert len(change.unsupported) == 1
+
+
+def test_flow_mapping_comment_and_current_version_not_reported() -> None:
+    text = "# include: [{python-version: '3.12'}]\ninclude: [{python-version: '3.13'}]\nrun: echo ${{ matrix.python-version }}\n"
+    _, change = update_workflow_text(text, FLOOR)
+    assert change.unsupported == []
