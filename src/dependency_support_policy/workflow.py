@@ -237,6 +237,8 @@ def update_workflow_text(text: str, floor: Version) -> tuple[str, WorkflowChange
     lines = text.splitlines(keepends=True)
     repl: dict[int, str] = {}
     drops: set[int] = set()
+    new_repl: dict[int, str]
+    new_drops: set[int]
     seen: _Seen = {}
     i = 0
     while i < len(lines):
