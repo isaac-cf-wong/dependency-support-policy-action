@@ -38,13 +38,10 @@ jobs:
                 # Locked, minimum (lowest-direct), and latest (highest)
                 # resolutions run on ubuntu; macos runs highest only, on the
                 # assumption that resolution behaviour is OS-independent.
-                python-version: ['3.12', '3.13', '3.14']
+                python-version: ['3.13', '3.14']
                 os: [ubuntu-latest]
                 resolution: [locked, lowest-direct, highest]
                 include:
-                    - os: macos-latest
-                      python-version: '3.12'
-                      resolution: highest
                     - os: macos-latest
                       python-version: '3.13'
                       resolution: highest
