@@ -269,6 +269,8 @@ def update_workflow_text(text: str, floor: Version) -> tuple[str, WorkflowChange
             block_col = None
         header = _BLOCK_SCALAR_RE.match(lines[i])
         if header is not None:
+            if re.match(r"[\"']?python-version[\"']?:", header["key"] or ""):
+                change.unsupported.append(f"line {i + 1}: python-version block scalar not rewritten")
             # body must be indented past the owning mapping key, or past the dash of a bare ``- |`` item
             indent = header["indent"]
             block_col = len(indent.replace("-", " ")) if header["key"] or "-" not in indent else indent.index("-")

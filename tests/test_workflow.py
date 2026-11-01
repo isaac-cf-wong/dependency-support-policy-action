@@ -245,3 +245,11 @@ def test_quoted_closing_bracket_in_flow_list_is_reported() -> None:
         new, change = update_workflow_text(text, FLOOR)
         assert new == text
         assert len(change.unsupported) == 1
+
+
+def test_python_version_block_scalar_is_reported_not_skipped_silently() -> None:
+    for header in ("python-version: |", "python-version: >-", "- python-version: |", '"python-version": |'):
+        text = f"{header}\n  3.12\nnext: 1\n"
+        new, change = update_workflow_text(text, FLOOR)
+        assert new == text
+        assert len(change.unsupported) == 1
