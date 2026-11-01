@@ -178,3 +178,32 @@ def test_remove_python_classifiers_without_classifiers() -> None:
 
     document = tomlkit.parse('[project]\nname = "demo"\n')
     assert remove_python_classifiers(document, Version("3.12")) == []
+
+
+def test_write_bytes_atomic_preserves_mode_and_leaves_no_temp(tmp_path: Path) -> None:
+    from dependency_support_policy.pyproject_edit import write_bytes_atomic
+
+    target = tmp_path / "f.yml"
+    target.write_bytes(b"old")
+    target.chmod(0o640)
+    write_bytes_atomic(target, b"a\r\nb")
+    assert target.read_bytes() == b"a\r\nb"
+    assert target.stat().st_mode & 0o777 == 0o640
+    assert [p.name for p in tmp_path.iterdir()] == ["f.yml"]
+    fresh = tmp_path / "new.yml"
+    write_bytes_atomic(fresh, b"x")
+    assert fresh.stat().st_mode & 0o777 == 0o644
+
+
+def test_write_bytes_atomic_cleans_up_on_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import os
+
+    from dependency_support_policy.pyproject_edit import write_bytes_atomic
+
+    def fail(*args: object) -> None:
+        raise OSError("replace failed")
+
+    monkeypatch.setattr(os, "replace", fail)
+    with pytest.raises(OSError, match="replace failed"):
+        write_bytes_atomic(tmp_path / "f.yml", b"x")
+    assert list(tmp_path.iterdir()) == []

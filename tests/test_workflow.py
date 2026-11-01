@@ -209,3 +209,39 @@ def test_flow_mapping_comment_and_current_version_not_reported() -> None:
     text = "# include: [{python-version: '3.12'}]\ninclude: [{python-version: '3.13'}]\nrun: echo ${{ matrix.python-version }}\n"
     _, change = update_workflow_text(text, FLOOR)
     assert change.unsupported == []
+
+
+def test_parent_key_pattern_is_not_exponential() -> None:
+    import time
+
+    from dependency_support_policy.workflow import _PARENT_KEY_RE
+
+    start = time.perf_counter()
+    assert _PARENT_KEY_RE.match("-:" + "!!" * 5000 + "\x00") is None
+    assert time.perf_counter() - start < 1.0
+
+
+def test_literal_block_bodies_are_skipped() -> None:
+    text = (
+        "- run: |\n    echo\n    python-version: '3.12'\n    - '3.11'\n"
+        "- name: x\n  with:\n    python-version: '3.12'\n"
+        "- run: >-\n    python-version: '3.12'\n"
+        "- |\n  python-version: '3.12'\n"
+    )
+    new, removed, raised = update(text)
+    assert new == text.replace("with:\n    python-version: '3.12'", "with:\n    python-version: '3.13'")
+    assert (removed, raised) == ([], ["3.12"])
+
+
+def test_anchored_block_items_are_reported() -> None:
+    text = "python-version:\n  - &old '3.12'\n  - !!str 3.11\n  - '3.13'\n"
+    new, change = update_workflow_text(text, FLOOR)
+    assert new == text
+    assert len(change.unsupported) == 2
+
+
+def test_quoted_closing_bracket_in_flow_list_is_reported() -> None:
+    for text in ("python-version: ['a]b', '3.12']\n", 'python-version: ["a]b", "3.12"]\n'):
+        new, change = update_workflow_text(text, FLOOR)
+        assert new == text
+        assert len(change.unsupported) == 1

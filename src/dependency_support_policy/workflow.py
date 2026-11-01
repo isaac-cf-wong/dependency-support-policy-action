@@ -37,7 +37,10 @@ _BLOCK_ITEM_RE = re.compile(
 )
 _SCALAR_RE = re.compile(r"^(?P<q>[\"']?)(?P<ver>[^\s\"'#]+)(?P=q)(?P<tail>[ \t]*(?:#.*)?)$")
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:[.\-\w]*)$")
-_PARENT_KEY_RE = re.compile(r"^[ \t]*[\"']?(?P<key>[\w-]+)[\"']?:[ \t]*(?:[&!][^\s#]+[ \t]*)*(?:#.*)?$")
+_PARENT_KEY_RE = re.compile(r"^[ \t]*[\"']?(?P<key>[\w-]+)[\"']?:(?:[ \t]+[&!][^\s#]+)*[ \t]*(?:#.*)?$")
+_BLOCK_SCALAR_RE = re.compile(
+    r"^(?P<indent>[ \t]*(?:-[ \t]+)?)(?P<key>[^\s#:][^#]*?:[ \t]+)?[|>][+\-0-9]*[ \t]*(?:#.*)?$"
+)
 _ANY_ITEM_RE = re.compile(r"^(?P<indent>[ \t]*)-([ \t]|$)")
 
 
@@ -105,6 +108,9 @@ def _flow_list(
         end_line += 1
         text += "\n" + lines[end_line].strip()
     close = text.find("]")
+    if close != -1 and (text[:close].count("'") % 2 or text[:close].count('"') % 2):
+        change.unsupported.append(f"line {i + 1}: python-version list containing a quoted ']' not rewritten")
+        return {}, set(), i + 1
     after = text[close + 1 :] if close != -1 else ""
     multiline = end_line > i
     if close == -1 or (multiline and ("#" in text[:close] or after.strip())):
@@ -133,7 +139,10 @@ def _block_list(
         any_item = _ANY_ITEM_RE.match(lines[i])
         if any_item is None or len(any_item["indent"]) < key_col:
             break
-        items.append((i, _BLOCK_ITEM_RE.match(lines[i])))  # None: not a plain version (expression, mapping)
+        item = _BLOCK_ITEM_RE.match(lines[i])
+        if item is None and lines[i].lstrip()[1:].lstrip()[:1] in {"&", "*", "!"}:
+            change.unsupported.append(f"line {i + 1}: python-version item with an anchor, alias or tag not rewritten")
+        items.append((i, item))  # None: not a plain version (expression, mapping, anchored)
         i += 1
     next_index = items[-1][0] + 1 if items else start
     stale = [(n, m) for n, m in items if m is not None and _below(m["ver"], floor)]
@@ -251,7 +260,20 @@ def update_workflow_text(text: str, floor: Version) -> tuple[str, WorkflowChange
     new_drops: set[int]
     seen: _Seen = {}
     i = 0
+    block_col: int | None = None  # column of the key owning a literal/folded block scalar being skipped
     while i < len(lines):
+        if block_col is not None:
+            if lines[i].strip() == "" or _indent(lines[i]) > block_col:
+                i += 1
+                continue
+            block_col = None
+        header = _BLOCK_SCALAR_RE.match(lines[i])
+        if header is not None:
+            # body must be indented past the owning mapping key, or past the dash of a bare ``- |`` item
+            indent = header["indent"]
+            block_col = len(indent.replace("-", " ")) if header["key"] or "-" not in indent else indent.index("-")
+            i += 1
+            continue
         key = _KEY_RE.match(lines[i])
         if key is None:
             if _embedded_stale_version(lines[i], floor):

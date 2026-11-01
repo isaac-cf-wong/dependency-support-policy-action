@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import tempfile
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -62,14 +63,19 @@ def write_text_atomic(path: Path, text: str) -> None:
 
 
 def write_bytes_atomic(path: Path, data: bytes) -> None:
-    """Write ``data`` to ``path`` atomically, byte for byte (no newline translation)."""
-    temporary = path.with_name(path.name + ".dspa-tmp")
-    temporary.write_bytes(data)
+    """Write ``data`` to ``path`` atomically, byte for byte (no newline translation).
+
+    The temporary file is created with ``mkstemp`` beside ``path`` so its name
+    is unpredictable, and takes the mode of an existing ``path``.
+    """
+    descriptor, name = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".dspa-tmp")
+    temporary = Path(name)
     try:
-        if path.exists():
-            os.chmod(temporary, path.stat().st_mode)
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(data)
+        os.chmod(temporary, path.stat().st_mode if path.exists() else 0o644)
         os.replace(temporary, path)
-    except OSError:
+    except BaseException:
         temporary.unlink(missing_ok=True)
         raise
 

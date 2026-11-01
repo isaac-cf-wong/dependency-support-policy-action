@@ -6,6 +6,7 @@ optionally regenerates uv.lock, and rolls everything back if that fails.
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -196,8 +197,11 @@ def _plan_python_floor(document: TOMLDocument, config: RunConfig, python_months:
     if result.status is RewriteStatus.UPDATED:
         workflow_changes = []
         for path in find_workflow_files(config.pyproject.parent):
-            new_text, change = update_workflow_text(path.read_bytes().decode("utf-8"), floor)
             relative = path.relative_to(config.pyproject.parent).as_posix()
+            if path.is_symlink():
+                plan.notes.append(f"{relative}: symlinked workflow not updated")
+                continue
+            new_text, change = update_workflow_text(path.read_bytes().decode("utf-8"), floor)
             plan.notes.extend(f"{relative}: {message}" for message in change.unsupported)
             if change.edited:
                 change.file = relative
@@ -269,11 +273,12 @@ def apply_plan(document: TOMLDocument, plan: ChangePlan, config: RunConfig) -> A
             write_bytes_atomic(path, data)
         lockfile_changed = regenerate_lockfile(project_dir, lock_mode)
     except Exception:
-        write_bytes_atomic(pyproject_path, pyproject_before)
-        for path, content in workflow_before.items():
-            write_bytes_atomic(path, content)
+        restores = [(pyproject_path, pyproject_before), *workflow_before.items()]
         if lock_before is not None:
-            write_bytes_atomic(lock_path, lock_before)
+            restores.append((lock_path, lock_before))
+        for target, content in restores:  # attempt every restore even if one fails
+            with contextlib.suppress(OSError):
+                write_bytes_atomic(target, content)
         raise
     return ApplyResult(
         pyproject_changed=True,
