@@ -245,3 +245,136 @@ class TestApplyPlan:
             apply_plan(document, plan, run_config)
         assert path.read_text(encoding="utf-8") == PYPROJECT
         assert lock_path.read_text(encoding="utf-8") == "old lock\n"
+
+
+class TestPythonFloorCompanions:
+    """Raising requires-python also updates classifiers and CI matrices."""
+
+    CONTENT = (
+        '[project]\nname = "demo"\nrequires-python = ">=3.9"\n'
+        'classifiers = [\n  "Programming Language :: Python :: 3.9",\n  "Programming Language :: Python :: 3.13",\n]\n'
+        "dependencies = []\n"
+    )
+    CI = "matrix:\n  python-version: ['3.9', '3.12', '3.13']\n"
+
+    def _project(self, tmp_path: Path) -> Path:
+        path = tmp_path / "pyproject.toml"
+        path.write_text(self.CONTENT, encoding="utf-8")
+        workflows = tmp_path / ".github" / "workflows"
+        workflows.mkdir(parents=True)
+        (workflows / "ci.yml").write_text(self.CI, encoding="utf-8")
+        return path
+
+    def test_plan_reports_and_apply_writes(self, tmp_path: Path) -> None:
+        path = self._project(tmp_path)
+        document = load_document(path)
+        run_config = config(pyproject=path)
+        plan = build_plan(document, run_config, make_fetcher())
+        change = plan.python_change
+        assert change is not None
+        assert change.removed_classifiers == ("Programming Language :: Python :: 3.9",)
+        assert [w.to_dict() for w in change.workflow_changes] == [
+            {"file": ".github/workflows/ci.yml", "removed": ["3.9"], "raised": []}
+        ]
+        # planning writes nothing
+        assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == self.CI
+
+        result = apply_plan(document, plan, run_config)
+        assert result.changed_files == ["pyproject.toml", ".github/workflows/ci.yml"]
+        assert "3.9" not in path.read_text(encoding="utf-8").split("classifiers")[1]
+        assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == (
+            "matrix:\n  python-version: ['3.12', '3.13']\n"
+        )
+
+    def test_lock_failure_restores_workflows(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        path = self._project(tmp_path)
+        (tmp_path / "uv.lock").write_text("old\n", encoding="utf-8")
+
+        def boom(project_dir: Path, mode: LockMode, **kwargs: object) -> bool:
+            raise RuntimeError("lock failed")
+
+        monkeypatch.setattr(planner, "regenerate_lockfile", boom)
+        document = load_document(path)
+        run_config = config(pyproject=path, lock=LockMode.MINIMAL)
+        plan = build_plan(document, run_config, make_fetcher())
+        with pytest.raises(RuntimeError):
+            apply_plan(document, plan, run_config)
+        assert path.read_text(encoding="utf-8") == self.CONTENT
+        assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == self.CI
+
+    def test_write_failure_rolls_back_everything(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        path = self._project(tmp_path)
+        (tmp_path / ".github/workflows/a.yml").write_text("python-version: ['3.9', '3.13']\n", encoding="utf-8")
+        real = planner.write_bytes_atomic
+        calls = {"n": 0}
+
+        def flaky(target: Path, data: bytes) -> None:
+            calls["n"] += 1
+            if calls["n"] == 2:  # second workflow write fails; pyproject and first workflow already written
+                raise OSError("disk full")
+            real(target, data)
+
+        monkeypatch.setattr(planner, "write_bytes_atomic", flaky)
+        document = load_document(path)
+        run_config = config(pyproject=path)
+        plan = build_plan(document, run_config, make_fetcher())
+        with pytest.raises(OSError, match="disk full"):
+            apply_plan(document, plan, run_config)
+        monkeypatch.setattr(planner, "write_bytes_atomic", real)
+        assert path.read_text(encoding="utf-8") == self.CONTENT
+        assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == self.CI
+        assert (tmp_path / ".github/workflows/a.yml").read_text(encoding="utf-8") == "python-version: ['3.9', '3.13']\n"
+
+    def test_crlf_workflow_preserved_and_unsupported_noted(self, tmp_path: Path) -> None:
+        path = self._project(tmp_path)
+        wf = tmp_path / ".github/workflows/ci.yml"
+        wf.write_bytes(b"python-version: ['3.9', '3.13']\r\nx: 1\r\n")
+        (tmp_path / ".github/workflows/b.yml").write_text(
+            "python-version: [\n '3.9', # c\n '3.13']\n", encoding="utf-8"
+        )
+        document = load_document(path)
+        run_config = config(pyproject=path)
+        plan = build_plan(document, run_config, make_fetcher())
+        assert any("b.yml" in note and "multi-line" in note for note in plan.notes)
+        apply_plan(document, plan, run_config)
+        assert wf.read_bytes() == b"python-version: ['3.13']\r\nx: 1\r\n"
+
+    def test_symlinked_workflow_is_skipped_with_note(self, tmp_path: Path) -> None:
+        path = self._project(tmp_path)
+        shared = tmp_path / "shared.yml"
+        shared.write_text(self.CI, encoding="utf-8")
+        (tmp_path / ".github/workflows/ci.yml").unlink()
+        (tmp_path / ".github/workflows/ci.yml").symlink_to(shared)
+        document = load_document(path)
+        run_config = config(pyproject=path)
+        plan = build_plan(document, run_config, make_fetcher())
+        assert any("ci.yml: symlinked workflow not updated" in note for note in plan.notes)
+        apply_plan(document, plan, run_config)
+        assert (tmp_path / ".github/workflows/ci.yml").is_symlink()
+        assert shared.read_text(encoding="utf-8") == self.CI
+
+    def test_rollback_attempts_every_restore_when_one_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        path = self._project(tmp_path)
+        (tmp_path / ".github/workflows/a.yml").write_text("python-version: ['3.9', '3.13']\n", encoding="utf-8")
+        (tmp_path / "uv.lock").write_text("old\n", encoding="utf-8")
+        real = planner.write_bytes_atomic
+
+        def boom(project_dir: Path, mode: LockMode, **kwargs: object) -> bool:
+            raise RuntimeError("lock failed")
+
+        def flaky(target: Path, data: bytes) -> None:
+            if target == path and data == self.CONTENT.encode():  # the pyproject restore fails
+                raise OSError("restore failed")
+            real(target, data)
+
+        monkeypatch.setattr(planner, "regenerate_lockfile", boom)
+        document = load_document(path)
+        run_config = config(pyproject=path, lock=LockMode.MINIMAL)
+        plan = build_plan(document, run_config, make_fetcher())
+        monkeypatch.setattr(planner, "write_bytes_atomic", flaky)
+        with pytest.raises(RuntimeError, match="lock failed"):
+            apply_plan(document, plan, run_config)
+        assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == self.CI
+        assert (tmp_path / ".github/workflows/a.yml").read_text(encoding="utf-8") == "python-version: ['3.9', '3.13']\n"

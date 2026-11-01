@@ -10,9 +10,11 @@
 - Release metadata comes from the PyPI JSON API; private registries are not
   supported yet. Registry failures abort the run with exit code 2 —
   deterministic, but a single unreachable package fails the whole run.
-- Trove classifiers (`Programming Language :: Python :: 3.x`) are not
-  updated when the Python floor moves — sync them manually (or lint them
-  with a separate tool).
+- When the Python floor moves, stale `Programming Language :: Python :: X.Y`
+  classifiers are removed, but new series are not added. Workflow files are
+  edited only in the `.github/workflows` directory beside `pyproject.toml` (a
+  shared workflow at a monorepo root is never touched, nor are symlinked files), and multi-line flow lists that contain
+  comments are reported in the plan notes instead of rewritten.
 - The CPython release table is built in; extend it via
   `[tool.dependency-support-policy.python-releases]` when new series ship.
   A plan note warns when the table looks stale relative to the reference

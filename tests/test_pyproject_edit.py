@@ -143,3 +143,67 @@ class TestWriteTextAtomic:
         path.chmod(0o600)
         write_text_atomic(path, "two\n")
         assert path.stat().st_mode & 0o777 == 0o600
+
+
+CLASSIFIED = """\
+[project]
+name = "demo"
+classifiers = [
+  "License :: OSI Approved",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",  # old
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+"""
+
+
+def test_remove_python_classifiers_below_floor() -> None:
+    from packaging.version import Version
+
+    from dependency_support_policy.pyproject_edit import remove_python_classifiers, stale_python_classifiers
+
+    document = tomlkit.parse(CLASSIFIED)
+    floor = Version("3.12")
+    assert stale_python_classifiers(document, floor) == ["Programming Language :: Python :: 3.11"]
+    assert remove_python_classifiers(document, floor) == ["Programming Language :: Python :: 3.11"]
+    assert dump_document(document) == CLASSIFIED.replace('  "Programming Language :: Python :: 3.11",  # old\n', "")
+
+
+def test_remove_python_classifiers_without_classifiers() -> None:
+    from packaging.version import Version
+
+    from dependency_support_policy.pyproject_edit import remove_python_classifiers
+
+    document = tomlkit.parse('[project]\nname = "demo"\n')
+    assert remove_python_classifiers(document, Version("3.12")) == []
+
+
+def test_write_bytes_atomic_preserves_mode_and_leaves_no_temp(tmp_path: Path) -> None:
+    from dependency_support_policy.pyproject_edit import write_bytes_atomic
+
+    target = tmp_path / "f.yml"
+    target.write_bytes(b"old")
+    target.chmod(0o640)
+    write_bytes_atomic(target, b"a\r\nb")
+    assert target.read_bytes() == b"a\r\nb"
+    assert target.stat().st_mode & 0o777 == 0o640
+    assert [p.name for p in tmp_path.iterdir()] == ["f.yml"]
+    fresh = tmp_path / "new.yml"
+    write_bytes_atomic(fresh, b"x")
+    assert fresh.stat().st_mode & 0o777 == 0o644
+
+
+def test_write_bytes_atomic_cleans_up_on_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import os
+
+    from dependency_support_policy.pyproject_edit import write_bytes_atomic
+
+    def fail(*args: object) -> None:
+        raise OSError("replace failed")
+
+    monkeypatch.setattr(os, "replace", fail)
+    with pytest.raises(OSError, match="replace failed"):
+        write_bytes_atomic(tmp_path / "f.yml", b"x")
+    assert list(tmp_path.iterdir()) == []

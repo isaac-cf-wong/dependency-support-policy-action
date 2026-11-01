@@ -83,6 +83,22 @@ class TestUpdateMode:
         assert 'requires-python = ">=3.11"' in content
         assert "updated files: pyproject.toml" in capsys.readouterr().out
 
+    def test_reports_classifiers_and_workflows(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        path = tmp_path / "pyproject.toml"
+        path.write_text(
+            '[project]\nname = "demo"\nrequires-python = ">=3.9"\n'
+            'classifiers = [\n  "Programming Language :: Python :: 3.9",\n  "Programming Language :: Python :: 3.12",\n]\n',
+            encoding="utf-8",
+        )
+        workflows = tmp_path / ".github" / "workflows"
+        workflows.mkdir(parents=True)
+        (workflows / "ci.yml").write_text("python-version: ['3.9', '3.12']\n", encoding="utf-8")
+        assert run("update", path) == EXIT_OK
+        out = capsys.readouterr().out
+        assert "drop classifier: Programming Language :: Python :: 3.9" in out
+        assert ".github/workflows/ci.yml: python-version 3.9 below floor" in out
+        assert ".github/workflows/ci.yml" in out.splitlines()[-1]
+
     def test_update_is_idempotent(self, outdated_project: Path, capsys: pytest.CaptureFixture[str]) -> None:
         assert run("update", outdated_project) == EXIT_OK
         content = outdated_project.read_text(encoding="utf-8")

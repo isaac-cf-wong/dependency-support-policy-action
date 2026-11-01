@@ -154,6 +154,11 @@ def _summarize(plan: ChangePlan, mode: str, apply_result: ApplyResult | None, st
             f"{plan.python_change.new_requires_python!r}",
             file=stream,
         )
+        for classifier in plan.python_change.removed_classifiers:
+            print(f"    drop classifier: {classifier}", file=stream)
+        for workflow in plan.python_change.workflow_changes:
+            dropped = ", ".join(workflow.removed + workflow.raised)
+            print(f"    {workflow.file}: python-version {dropped} below floor", file=stream)
     for skipped in plan.skipped:
         print(f"  skipped {skipped.requirement!r}: {skipped.reason}", file=stream)
     for note in plan.notes:

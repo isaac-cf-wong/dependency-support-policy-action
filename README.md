@@ -42,6 +42,9 @@ The built-in `spec0` policy implements Scientific Python SPEC 0 defaults:
 
 - **Python**: support window 36 months — `requires-python` is floored at the
   oldest CPython minor series released within 3 years.
+  When the floor rises, `Programming Language :: Python :: X.Y` classifiers and
+  `python-version` entries in `.github/workflows/*.yml` and `*.yaml` below it are updated too
+  (matrix entries dropped; lone pins raised to the floor).
 - **Packages**: support window 24 months.
 
 Both windows, and per-package windows, are configurable (see below), so you
@@ -251,8 +254,11 @@ A floor is only honest if you test it. Recommended matrix:
   reported and skipped — resolve the conflict manually.
 - Release metadata comes from the PyPI JSON API; private registries are not
   supported yet (registry failures abort the run with exit code 2).
-- Trove classifiers (`Programming Language :: Python :: 3.x`) are not
-  updated when the Python floor moves.
+- When the Python floor moves, stale `Programming Language :: Python :: X.Y`
+  classifiers are removed, but new series are not added. Workflow files are
+  edited only in the `.github/workflows` directory beside `pyproject.toml` (a
+  shared workflow at a monorepo root is never touched, nor are symlinked files), and multi-line flow lists that contain
+  comments are reported in the plan notes instead of rewritten.
 - The CPython release table is built in; extend it via
   `[tool.dependency-support-policy.python-releases]` when new series ship.
 

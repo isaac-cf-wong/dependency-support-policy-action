@@ -6,10 +6,13 @@ optionally regenerates uv.lock, and rolls everything back if that fails.
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass, field
 from datetime import date
+from pathlib import Path
 from typing import Any
 
+from packaging.version import Version
 from tomlkit import TOMLDocument
 
 from .config import LockMode, RunConfig
@@ -21,7 +24,10 @@ from .pyproject_edit import (
     dump_document,
     get_requires_python,
     iter_dependency_items,
+    remove_python_classifiers,
     set_requires_python,
+    stale_python_classifiers,
+    write_bytes_atomic,
     write_text_atomic,
 )
 from .python_releases import python_series, table_may_be_stale
@@ -32,6 +38,7 @@ from .requirements import (
     rewrite_requirement_lower_bound,
     rewrite_specifier_lower_bound,
 )
+from .workflow import WorkflowChange, find_workflow_files, update_workflow_text
 
 
 @dataclass(frozen=True)
@@ -77,6 +84,8 @@ class PythonFloorChange:
     new_requires_python: str
     old_floor: str | None
     new_floor: str
+    removed_classifiers: tuple[str, ...] = ()
+    workflow_changes: tuple[WorkflowChange, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -84,6 +93,8 @@ class PythonFloorChange:
             "new_requires_python": self.new_requires_python,
             "old_floor": self.old_floor,
             "new_floor": self.new_floor,
+            "removed_classifiers": list(self.removed_classifiers),
+            "workflow_changes": [change.to_dict() for change in self.workflow_changes],
         }
 
 
@@ -98,6 +109,7 @@ class ChangePlan:
     python_change: PythonFloorChange | None = None
     notes: list[str] = field(default_factory=list)
     _item_updates: list[tuple[DependencyItem, str]] = field(default_factory=list, repr=False)
+    _workflow_updates: list[tuple[Path, bytes]] = field(default_factory=list, repr=False)
 
     @property
     def changed(self) -> bool:
@@ -183,11 +195,25 @@ def _plan_python_floor(document: TOMLDocument, config: RunConfig, python_months:
     floor = compute_floor(python_series(config.python_releases), config.reference_date, python_months)
     result = rewrite_specifier_lower_bound(requires_python, floor)
     if result.status is RewriteStatus.UPDATED:
+        workflow_changes = []
+        for path in find_workflow_files(config.pyproject.parent):
+            relative = path.relative_to(config.pyproject.parent).as_posix()
+            if path.is_symlink():
+                plan.notes.append(f"{relative}: symlinked workflow not updated")
+                continue
+            new_text, change = update_workflow_text(path.read_bytes().decode("utf-8"), floor)
+            plan.notes.extend(f"{relative}: {message}" for message in change.unsupported)
+            if change.edited:
+                change.file = relative
+                workflow_changes.append(change)
+                plan._workflow_updates.append((path, new_text.encode("utf-8")))
         plan.python_change = PythonFloorChange(
             old_requires_python=requires_python,
             new_requires_python=result.text,
             old_floor=str(result.old_floor) if result.old_floor else None,
             new_floor=str(floor),
+            removed_classifiers=tuple(stale_python_classifiers(document, floor)),
+            workflow_changes=tuple(workflow_changes),
         )
     elif result.status is RewriteStatus.SKIPPED:
         plan.notes.append(f"requires-python not updated: {result.reason}")
@@ -199,6 +225,7 @@ class ApplyResult:
 
     pyproject_changed: bool
     lockfile_changed: bool
+    workflow_files: tuple[str, ...] = ()
 
     @property
     def changed_files(self) -> list[str]:
@@ -207,6 +234,7 @@ class ApplyResult:
             files.append("pyproject.toml")
         if self.lockfile_changed:
             files.append("uv.lock")
+        files.extend(self.workflow_files)
         return files
 
 
@@ -223,6 +251,7 @@ def apply_plan(document: TOMLDocument, plan: ChangePlan, config: RunConfig) -> A
         item.set_text(new_text)
     if plan.python_change is not None:
         set_requires_python(document, plan.python_change.new_requires_python)
+        remove_python_classifiers(document, Version(plan.python_change.new_floor))
 
     pyproject_path = config.pyproject
     project_dir = pyproject_path.parent
@@ -231,7 +260,7 @@ def apply_plan(document: TOMLDocument, plan: ChangePlan, config: RunConfig) -> A
     pyproject_before = pyproject_path.read_bytes()
     lock_before = lock_path.read_bytes() if lock_path.exists() else None
 
-    write_text_atomic(pyproject_path, dump_document(document))
+    workflow_before = {path: path.read_bytes() for path, _ in plan._workflow_updates}
 
     lock_mode = config.lock
     if lock_mode is not LockMode.OFF and lock_before is None:
@@ -239,10 +268,22 @@ def apply_plan(document: TOMLDocument, plan: ChangePlan, config: RunConfig) -> A
         lock_mode = LockMode.OFF
 
     try:
+        write_text_atomic(pyproject_path, dump_document(document))
+        for path, data in plan._workflow_updates:
+            write_bytes_atomic(path, data)
         lockfile_changed = regenerate_lockfile(project_dir, lock_mode)
     except Exception:
-        write_text_atomic(pyproject_path, pyproject_before.decode("utf-8"))
+        restores = [(pyproject_path, pyproject_before), *workflow_before.items()]
         if lock_before is not None:
-            lock_path.write_bytes(lock_before)
+            restores.append((lock_path, lock_before))
+        for target, content in restores:  # attempt every restore even if one fails
+            with contextlib.suppress(OSError):
+                write_bytes_atomic(target, content)
         raise
-    return ApplyResult(pyproject_changed=True, lockfile_changed=lockfile_changed)
+    return ApplyResult(
+        pyproject_changed=True,
+        lockfile_changed=lockfile_changed,
+        workflow_files=tuple(
+            change.file for change in (plan.python_change.workflow_changes if plan.python_change else ())
+        ),
+    )
