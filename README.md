@@ -254,8 +254,11 @@ A floor is only honest if you test it. Recommended matrix:
   reported and skipped — resolve the conflict manually.
 - Release metadata comes from the PyPI JSON API; private registries are not
   supported yet (registry failures abort the run with exit code 2).
-- Trove classifiers (`Programming Language :: Python :: 3.x`) are not
-  updated when the Python floor moves.
+- When the Python floor moves, stale `Programming Language :: Python :: X.Y`
+  classifiers are removed, but new series are not added. Workflow files are
+  edited only in `<working-directory>/.github/workflows` (a shared workflow
+  at a monorepo root is never touched), and multi-line flow lists that contain
+  comments are reported in the plan notes instead of rewritten.
 - The CPython release table is built in; extend it via
   `[tool.dependency-support-policy.python-releases]` when new series ship.
 

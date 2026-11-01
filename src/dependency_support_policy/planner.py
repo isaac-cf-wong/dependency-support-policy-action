@@ -26,6 +26,7 @@ from .pyproject_edit import (
     remove_python_classifiers,
     set_requires_python,
     stale_python_classifiers,
+    write_bytes_atomic,
     write_text_atomic,
 )
 from .python_releases import python_series, table_may_be_stale
@@ -107,7 +108,7 @@ class ChangePlan:
     python_change: PythonFloorChange | None = None
     notes: list[str] = field(default_factory=list)
     _item_updates: list[tuple[DependencyItem, str]] = field(default_factory=list, repr=False)
-    _workflow_updates: list[tuple[Path, str]] = field(default_factory=list, repr=False)
+    _workflow_updates: list[tuple[Path, bytes]] = field(default_factory=list, repr=False)
 
     @property
     def changed(self) -> bool:
@@ -195,11 +196,13 @@ def _plan_python_floor(document: TOMLDocument, config: RunConfig, python_months:
     if result.status is RewriteStatus.UPDATED:
         workflow_changes = []
         for path in find_workflow_files(config.pyproject.parent):
-            new_text, change = update_workflow_text(path.read_text(encoding="utf-8"), floor)
-            if change.removed or change.raised:
-                change.file = path.relative_to(config.pyproject.parent).as_posix()
+            new_text, change = update_workflow_text(path.read_bytes().decode("utf-8"), floor)
+            relative = path.relative_to(config.pyproject.parent).as_posix()
+            plan.notes.extend(f"{relative}: {message}" for message in change.unsupported)
+            if change.edited:
+                change.file = relative
                 workflow_changes.append(change)
-                plan._workflow_updates.append((path, new_text))
+                plan._workflow_updates.append((path, new_text.encode("utf-8")))
         plan.python_change = PythonFloorChange(
             old_requires_python=requires_python,
             new_requires_python=result.text,
@@ -255,23 +258,22 @@ def apply_plan(document: TOMLDocument, plan: ChangePlan, config: RunConfig) -> A
 
     workflow_before = {path: path.read_bytes() for path, _ in plan._workflow_updates}
 
-    write_text_atomic(pyproject_path, dump_document(document))
-    for path, new_text in plan._workflow_updates:
-        write_text_atomic(path, new_text)
-
     lock_mode = config.lock
     if lock_mode is not LockMode.OFF and lock_before is None:
         plan.notes.append("uv.lock not found; lockfile regeneration skipped")
         lock_mode = LockMode.OFF
 
     try:
+        write_text_atomic(pyproject_path, dump_document(document))
+        for path, data in plan._workflow_updates:
+            write_bytes_atomic(path, data)
         lockfile_changed = regenerate_lockfile(project_dir, lock_mode)
     except Exception:
-        write_text_atomic(pyproject_path, pyproject_before.decode("utf-8"))
+        write_bytes_atomic(pyproject_path, pyproject_before)
         for path, content in workflow_before.items():
-            path.write_bytes(content)
+            write_bytes_atomic(path, content)
         if lock_before is not None:
-            lock_path.write_bytes(lock_before)
+            write_bytes_atomic(lock_path, lock_before)
         raise
     return ApplyResult(
         pyproject_changed=True,

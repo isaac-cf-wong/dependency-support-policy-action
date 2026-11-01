@@ -301,3 +301,40 @@ class TestPythonFloorCompanions:
             apply_plan(document, plan, run_config)
         assert path.read_text(encoding="utf-8") == self.CONTENT
         assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == self.CI
+
+    def test_write_failure_rolls_back_everything(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        path = self._project(tmp_path)
+        (tmp_path / ".github/workflows/a.yml").write_text("python-version: ['3.9', '3.13']\n", encoding="utf-8")
+        real = planner.write_bytes_atomic
+        calls = {"n": 0}
+
+        def flaky(target: Path, data: bytes) -> None:
+            calls["n"] += 1
+            if calls["n"] == 2:  # second workflow write fails; pyproject and first workflow already written
+                raise OSError("disk full")
+            real(target, data)
+
+        monkeypatch.setattr(planner, "write_bytes_atomic", flaky)
+        document = load_document(path)
+        run_config = config(pyproject=path)
+        plan = build_plan(document, run_config, make_fetcher())
+        with pytest.raises(OSError, match="disk full"):
+            apply_plan(document, plan, run_config)
+        monkeypatch.setattr(planner, "write_bytes_atomic", real)
+        assert path.read_text(encoding="utf-8") == self.CONTENT
+        assert (tmp_path / ".github/workflows/ci.yml").read_text(encoding="utf-8") == self.CI
+        assert (tmp_path / ".github/workflows/a.yml").read_text(encoding="utf-8") == "python-version: ['3.9', '3.13']\n"
+
+    def test_crlf_workflow_preserved_and_unsupported_noted(self, tmp_path: Path) -> None:
+        path = self._project(tmp_path)
+        wf = tmp_path / ".github/workflows/ci.yml"
+        wf.write_bytes(b"python-version: ['3.9', '3.13']\r\nx: 1\r\n")
+        (tmp_path / ".github/workflows/b.yml").write_text(
+            "python-version: [\n '3.9', # c\n '3.13']\n", encoding="utf-8"
+        )
+        document = load_document(path)
+        run_config = config(pyproject=path)
+        plan = build_plan(document, run_config, make_fetcher())
+        assert any("b.yml" in note and "multi-line" in note for note in plan.notes)
+        apply_plan(document, plan, run_config)
+        assert wf.read_bytes() == b"python-version: ['3.13']\r\nx: 1\r\n"

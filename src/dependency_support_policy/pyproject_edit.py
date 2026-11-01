@@ -61,6 +61,19 @@ def write_text_atomic(path: Path, text: str) -> None:
         raise
 
 
+def write_bytes_atomic(path: Path, data: bytes) -> None:
+    """Write ``data`` to ``path`` atomically, byte for byte (no newline translation)."""
+    temporary = path.with_name(path.name + ".dspa-tmp")
+    temporary.write_bytes(data)
+    try:
+        if path.exists():
+            os.chmod(temporary, path.stat().st_mode)
+        os.replace(temporary, path)
+    except OSError:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
 def available_groups(document: TOMLDocument) -> list[str]:
     """All dependency collections present in the document."""
     groups: list[str] = []

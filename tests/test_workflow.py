@@ -51,7 +51,7 @@ def test_scalar_in_include_entry_is_raised() -> None:
 
 def test_dash_prefixed_scalar_and_unquoted() -> None:
     new, _, raised = update("- python-version: 3.10\n")
-    assert new == "- python-version: 3.13\n"
+    assert new == "- python-version: '3.13'\n"  # quoted: bare 3.10 would parse as the float 3.1
     assert raised == ["3.10"]
 
 
@@ -81,3 +81,71 @@ def test_find_workflow_files(tmp_path: Path) -> None:
     (wf / "a.yml").write_text("x")
     (wf / "c.txt").write_text("x")
     assert [p.name for p in find_workflow_files(tmp_path)] == ["a.yml", "b.yaml"]
+
+
+def test_multiline_flow_list_collapsed() -> None:
+    text = "python-version: [\n  '3.12',\n  '3.13',\n]\nos: x\n"
+    new, removed, _ = update(text)
+    assert new == "python-version: ['3.13']\nos: x\n"
+    assert removed == ["3.12"]
+
+
+def test_multiline_flow_list_with_comment_is_reported_not_changed() -> None:
+    text = "python-version: [\n  '3.12',  # old\n  '3.13',\n]\n"
+    new, change = update_workflow_text(text, FLOOR)
+    assert new == text
+    assert change.unsupported
+
+
+def test_block_list_comments_and_blank_lines_between_items() -> None:
+    text = "python-version:\n  - '3.10'\n  # older\n\n  - '3.11'\n  - '3.12'\nnext: 1\n"
+    new, removed, _ = update(text)
+    assert new == "python-version:\n  - '3.13'\n  # older\n\nnext: 1\n"
+    assert removed == ["3.10", "3.11", "3.12"]
+
+
+def test_exclude_entries_untouched() -> None:
+    text = "exclude:\n  - os: windows-latest\n    python-version: '3.11'\n"
+    new, removed, raised = update(text)
+    assert new == text
+    assert removed == raised == []
+
+
+def test_include_entries_made_identical_are_deduped() -> None:
+    text = (
+        "include:\n"
+        "  - os: macos-latest\n    python-version: '3.11'\n"
+        "  - os: macos-latest\n    python-version: '3.13'\n"
+        "  - os: linux\n    python-version: '3.12'\n"
+    )
+    new, removed, raised = update(text)
+    assert new == (
+        "include:\n  - os: macos-latest\n    python-version: '3.13'\n  - os: linux\n    python-version: '3.13'\n"
+    )
+    assert removed == ["3.11"]
+    assert raised == ["3.12"]
+
+
+def test_include_duplicate_raised_after_original() -> None:
+    text = "include:\n  - os: m\n    python-version: '3.13'\n  - os: m\n    python-version: '3.12'\n"
+    new, removed, raised = update(text)
+    assert new == "include:\n  - os: m\n    python-version: '3.13'\n"
+    assert (removed, raised) == (["3.12"], [])
+
+
+def test_include_original_duplicate_of_earlier_raised_drops_the_raised() -> None:
+    text = "include:\n  - os: m\n    python-version: '3.12'\n  - os: m\n    python-version: '3.13'\n"
+    new, removed, raised = update(text)
+    assert new == "include:\n  - os: m\n    python-version: '3.13'\n"
+    assert (removed, raised) == (["3.12"], [])
+
+
+def test_quoted_key() -> None:
+    new, removed, _ = update("\"python-version\": ['3.12', '3.13']\n")
+    assert new == "\"python-version\": ['3.13']\n"
+    assert removed == ["3.12"]
+
+
+def test_unquoted_floor_in_all_stale_list_is_quoted() -> None:
+    new, _, _ = update("python-version: [3.9, 3.10]\n")
+    assert new == "python-version: ['3.13']\n"
