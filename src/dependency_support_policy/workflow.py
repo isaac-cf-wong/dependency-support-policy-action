@@ -37,7 +37,7 @@ _BLOCK_ITEM_RE = re.compile(
 )
 _SCALAR_RE = re.compile(r"^(?P<q>[\"']?)(?P<ver>[^\s\"'#]+)(?P=q)(?P<tail>[ \t]*(?:#.*)?)$")
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:[.\-\w]*)$")
-_PARENT_KEY_RE = re.compile(r"^[ \t]*[\"']?(?P<key>[\w-]+)[\"']?:[ \t]*(?:#.*)?$")
+_PARENT_KEY_RE = re.compile(r"^[ \t]*[\"']?(?P<key>[\w-]+)[\"']?:[ \t]*(?:&[\w-]+[ \t]*)?(?:#.*)?$")
 _ANY_ITEM_RE = re.compile(r"^(?P<indent>[ \t]*)-([ \t]|$)")
 
 
@@ -246,7 +246,10 @@ def update_workflow_text(text: str, floor: Version) -> tuple[str, WorkflowChange
             continue
         rest = key["rest"]
         key_col = len(key["indent"].replace("-", " "))
-        if rest.startswith("["):
+        if rest[:1] in {"&", "*", "!"}:  # anchor, alias or tag: not rewritten, but never silently
+            change.unsupported.append(f"line {i + 1}: python-version with an anchor, alias or tag not rewritten")
+            new_repl, new_drops, i = {}, set(), i + 1
+        elif rest.startswith("["):
             new_repl, new_drops, i = _flow_list(lines, i, key, floor, change)
         elif rest == "" or rest.startswith("#"):
             new_repl, new_drops, i = _block_list(lines, i + 1, key_col, floor, change)

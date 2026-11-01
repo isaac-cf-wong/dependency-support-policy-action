@@ -177,3 +177,16 @@ def test_block_list_with_expression_item_does_not_synthesize_floor() -> None:
     new, removed, _ = update(text)
     assert new == "python-version:\n  - ${{ matrix.py }}\n"
     assert removed == ["3.11", "3.12"]
+
+
+def test_anchor_alias_and_tag_are_reported_not_changed() -> None:
+    for value in ("&v ['3.12', '3.13']", "&v '3.12'", "*v", "!!str 3.12"):
+        text = f"python-version: {value}\n"
+        new, change = update_workflow_text(text, FLOOR)
+        assert new == text
+        assert len(change.unsupported) == 1
+
+
+def test_exclude_with_anchor_untouched() -> None:
+    text = "exclude: &exc\n  - os: w\n    python-version: '3.12'\n"
+    assert update(text)[0] == text
