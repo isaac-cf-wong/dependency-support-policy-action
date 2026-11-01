@@ -96,7 +96,7 @@ lock = "off"                          # off | minimal | upgrade
 numpy = 30                            # per-package window, in months
 
 [tool.dependency-support-policy.python-releases]
-"3.15" = 2026-10-01                   # extend the built-in CPython table
+"3.16" = 2027-10-01                   # extend the built-in CPython table
 ```
 
 Managed dependency collections (`groups`): `project`

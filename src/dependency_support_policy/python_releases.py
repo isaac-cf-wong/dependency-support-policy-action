@@ -24,6 +24,7 @@ CPYTHON_RELEASES: Mapping[tuple[int, int], date] = {
     (3, 12): date(2023, 10, 2),
     (3, 13): date(2024, 10, 7),
     (3, 14): date(2025, 10, 7),
+    (3, 15): date(2026, 10, 9),
 }
 
 # CPython releases annually; if the reference date is this far past the newest

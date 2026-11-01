@@ -19,9 +19,9 @@ class TestPythonSeries:
         assert by_key[(3, 12)].first_release_date == date(2023, 10, 2)
 
     def test_extra_series_merged(self) -> None:
-        series = python_series({(3, 15): date(2026, 10, 1)})
+        series = python_series({(3, 16): date(2027, 10, 1)})
         by_key = {s.series: s for s in series}
-        assert by_key[(3, 15)].first_release_date == date(2026, 10, 1)
+        assert by_key[(3, 16)].first_release_date == date(2027, 10, 1)
 
     def test_extra_series_overrides_builtin(self) -> None:
         series = python_series({(3, 14): date(2025, 12, 1)})
@@ -34,7 +34,7 @@ class TestStaleness:
         assert not table_may_be_stale(date(2026, 7, 11))
 
     def test_stale_reference(self) -> None:
-        assert table_may_be_stale(date(2027, 6, 1))
+        assert table_may_be_stale(date(2028, 1, 1))
 
     def test_extra_release_extends_freshness(self) -> None:
-        assert not table_may_be_stale(date(2027, 6, 1), {(3, 15): date(2026, 10, 1)})
+        assert not table_may_be_stale(date(2028, 1, 1), {(3, 16): date(2027, 10, 1)})

@@ -51,7 +51,7 @@ table via configuration:
 
 ```toml
 [tool.dependency-support-policy.python-releases]
-"3.15" = 2026-10-01
+"3.16" = 2027-10-01
 ```
 
 If `requires-python` is absent it is left absent (noted in the plan), and an

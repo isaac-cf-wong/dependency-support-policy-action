@@ -14,12 +14,12 @@ A floor is only honest if you test it. Recommended resolutions to run in CI:
 ```yaml
 strategy:
     matrix:
-        python-version: ['3.12', '3.13', '3.14']
+        python-version: ['3.13', '3.14', '3.15']
         os: [ubuntu-latest]
         resolution: [locked, lowest-direct, highest]
         include:
             - os: macos-latest
-              python-version: '3.14'
+              python-version: '3.15'
               resolution: highest
 steps:
     - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6

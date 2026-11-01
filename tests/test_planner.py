@@ -111,7 +111,7 @@ class TestBuildPlan:
 
     def test_stale_python_table_noted(self) -> None:
         document = tomlkit.parse(PYPROJECT)
-        plan = build_plan(document, config(reference_date=date(2027, 6, 1)), make_fetcher())
+        plan = build_plan(document, config(reference_date=date(2028, 1, 1)), make_fetcher())
         assert any("release table" in note for note in plan.notes)
 
     def test_registry_failure_aborts(self) -> None:

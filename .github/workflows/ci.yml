@@ -38,7 +38,7 @@ jobs:
                 # Locked, minimum (lowest-direct), and latest (highest)
                 # resolutions run on ubuntu; macos runs highest only, on the
                 # assumption that resolution behaviour is OS-independent.
-                python-version: ['3.13', '3.14']
+                python-version: ['3.13', '3.14', '3.15']
                 os: [ubuntu-latest]
                 resolution: [locked, lowest-direct, highest]
                 include:
@@ -47,6 +47,9 @@ jobs:
                       resolution: highest
                     - os: macos-latest
                       python-version: '3.14'
+                      resolution: highest
+                    - os: macos-latest
+                      python-version: '3.15'
                       resolution: highest
         runs-on: ${{ matrix.os }}
         steps:
