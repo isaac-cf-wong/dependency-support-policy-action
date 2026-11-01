@@ -190,3 +190,9 @@ def test_anchor_alias_and_tag_are_reported_not_changed() -> None:
 def test_exclude_with_anchor_untouched() -> None:
     text = "exclude: &exc\n  - os: w\n    python-version: '3.12'\n"
     assert update(text)[0] == text
+
+
+def test_exclude_with_dotted_anchor_or_tag_untouched() -> None:
+    for header in ("exclude: &ex.v1", "exclude: !!seq &a.b-c"):
+        text = f"{header}\n  - os: w\n    python-version: '3.12'\n"
+        assert update(text)[0] == text

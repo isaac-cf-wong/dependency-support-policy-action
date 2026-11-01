@@ -37,7 +37,7 @@ _BLOCK_ITEM_RE = re.compile(
 )
 _SCALAR_RE = re.compile(r"^(?P<q>[\"']?)(?P<ver>[^\s\"'#]+)(?P=q)(?P<tail>[ \t]*(?:#.*)?)$")
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:[.\-\w]*)$")
-_PARENT_KEY_RE = re.compile(r"^[ \t]*[\"']?(?P<key>[\w-]+)[\"']?:[ \t]*(?:&[\w-]+[ \t]*)?(?:#.*)?$")
+_PARENT_KEY_RE = re.compile(r"^[ \t]*[\"']?(?P<key>[\w-]+)[\"']?:[ \t]*(?:[&!][^\s#]+[ \t]*)*(?:#.*)?$")
 _ANY_ITEM_RE = re.compile(r"^(?P<indent>[ \t]*)-([ \t]|$)")
 
 
