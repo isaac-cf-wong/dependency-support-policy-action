@@ -149,3 +149,31 @@ def test_quoted_key() -> None:
 def test_unquoted_floor_in_all_stale_list_is_quoted() -> None:
     new, _, _ = update("python-version: [3.9, 3.10]\n")
     assert new == "python-version: ['3.13']\n"
+
+
+def test_three_identical_include_entries_collapse_to_one() -> None:
+    entry = "  - os: m\n    python-version: '{}'\n"
+    text = "include:\n" + entry.format("3.12") + entry.format("3.13") + entry.format("3.13")
+    new, removed, raised = update(text)
+    assert new == "include:\n" + entry.format("3.13") + entry.format("3.13")
+    assert (removed, raised) == (["3.12"], [])
+
+
+def test_identical_include_entries_in_separate_jobs_are_independent() -> None:
+    job = "  {}:\n    include:\n      - os: u\n        python-version: '3.12'\n"
+    text = "jobs:\n" + job.format("test") + job.format("bench")
+    new, removed, raised = update(text)
+    assert new == text.replace("'3.12'", "'3.13'")
+    assert (removed, raised) == ([], ["3.12", "3.12"])
+
+
+def test_quoted_exclude_key_untouched() -> None:
+    text = "\"exclude\":\n  - os: w\n    python-version: '3.11'\n"
+    assert update(text)[0] == text
+
+
+def test_block_list_with_expression_item_does_not_synthesize_floor() -> None:
+    text = "python-version:\n  - '3.11'\n  - ${{ matrix.py }}\n  - '3.12'\n"
+    new, removed, _ = update(text)
+    assert new == "python-version:\n  - ${{ matrix.py }}\n"
+    assert removed == ["3.11", "3.12"]

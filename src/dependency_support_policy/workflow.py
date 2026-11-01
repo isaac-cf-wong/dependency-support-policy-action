@@ -37,7 +37,8 @@ _BLOCK_ITEM_RE = re.compile(
 )
 _SCALAR_RE = re.compile(r"^(?P<q>[\"']?)(?P<ver>[^\s\"'#]+)(?P=q)(?P<tail>[ \t]*(?:#.*)?)$")
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:[.\-\w]*)$")
-_PARENT_KEY_RE = re.compile(r"^[ \t]*(?P<key>[\w-]+):[ \t]*(?:#.*)?$")
+_PARENT_KEY_RE = re.compile(r"^[ \t]*[\"']?(?P<key>[\w-]+)[\"']?:[ \t]*(?:#.*)?$")
+_ANY_ITEM_RE = re.compile(r"^(?P<indent>[ \t]*)-([ \t]|$)")
 
 
 @dataclass
@@ -122,20 +123,20 @@ def _block_list(
     lines: list[str], start: int, key_col: int, floor: Version, change: WorkflowChange
 ) -> tuple[dict[int, str], set[int], int]:
     """Rewrite ``-`` items after a bare key; comments and blank lines between items pass through."""
-    items: list[tuple[int, re.Match[str]]] = []
+    items: list[tuple[int, re.Match[str] | None]] = []
     i = start
     while i < len(lines):
         stripped = lines[i].strip()
         if stripped == "" or stripped.startswith("#"):
             i += 1
             continue
-        item = _BLOCK_ITEM_RE.match(lines[i])
-        if item is None or len(item["indent"]) < key_col:
+        any_item = _ANY_ITEM_RE.match(lines[i])
+        if any_item is None or len(any_item["indent"]) < key_col:
             break
-        items.append((i, item))
+        items.append((i, _BLOCK_ITEM_RE.match(lines[i])))  # None: not a plain version (expression, mapping)
         i += 1
     next_index = items[-1][0] + 1 if items else start
-    stale = [(n, m) for n, m in items if _below(m["ver"], floor)]
+    stale = [(n, m) for n, m in items if m is not None and _below(m["ver"], floor)]
     change.removed.extend(m["ver"] for _, m in stale)
     drops = {n for n, _ in stale}
     repl: dict[int, str] = {}
@@ -146,8 +147,8 @@ def _block_list(
     return repl, drops, next_index
 
 
-def _enclosing_key(lines: list[str], idx: int, dash_col: int) -> str | None:
-    """Name of the mapping key owning the list item that starts at column ``dash_col``."""
+def _enclosing_key(lines: list[str], idx: int, dash_col: int) -> tuple[str, int] | None:
+    """Name and line of the mapping key owning the list item that starts at column ``dash_col``."""
     for j in range(idx - 1, -1, -1):
         line = lines[j]
         stripped = line.strip()
@@ -157,7 +158,7 @@ def _enclosing_key(lines: list[str], idx: int, dash_col: int) -> str | None:
         if col > dash_col or (col == dash_col and stripped.startswith("-")):
             continue
         match = _PARENT_KEY_RE.match(line)
-        return match["key"] if match and col <= dash_col else None
+        return (match["key"], j) if match and col <= dash_col else None
     return None
 
 
@@ -179,7 +180,7 @@ def _entry_bounds(lines: list[str], idx: int, key_col: int, dash_col: int) -> tu
     return start, end
 
 
-_Seen = dict[str, tuple[int, int, str | None]]
+_Seen = dict[tuple[int, str], tuple[int, int, str | None]]
 
 
 def _scalar(
@@ -199,7 +200,8 @@ def _scalar(
     dash_col = key["indent"].index("-") if "-" in key["indent"] else key_col - 2
     start, end = _entry_bounds(lines, i, key_col, dash_col) if dash_col >= 0 else (i, i)
     in_entry = dash_col >= 0 and lines[start].lstrip().startswith("-") and _indent(lines[start]) == dash_col
-    parent = _enclosing_key(lines, start, dash_col) if in_entry else None
+    enclosing = _enclosing_key(lines, start, dash_col) if in_entry else None
+    parent, block = enclosing if enclosing is not None else (None, -1)
     if parent == "exclude":
         return {}, set()
     repl: dict[int, str] = {}
@@ -211,8 +213,9 @@ def _scalar(
         return repl, set()
     text = "".join(repl.get(n, lines[n]) for n in range(start, end + 1))
     drops: set[int] = set()
-    if text in seen:
-        prev_start, prev_end, prev_raised = seen[text]
+    ident = (block, text)  # duplicates are only meaningful within one include block
+    if ident in seen:
+        prev_start, prev_end, prev_raised = seen[ident]
         if below:
             drops = set(range(start, end + 1))
             change.raised.remove(value["ver"])
@@ -222,8 +225,9 @@ def _scalar(
             drops = set(range(prev_start, prev_end + 1))
             change.raised.remove(prev_raised)
             change.removed.append(prev_raised)
+            seen[ident] = (start, end, None)
     else:
-        seen[text] = (start, end, value["ver"] if below else None)
+        seen[ident] = (start, end, value["ver"] if below else None)
     return repl, drops
 
 
