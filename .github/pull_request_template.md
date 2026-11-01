@@ -1,11 +1,38 @@
-# Description
+## 📝 Summary
 
-<!-- What does this PR change, and why? -->
+Briefly describe the changes introduced by this PR. Mention any related issues
+using keywords (e.g., `Closes #123`).
 
-## Checklist
+## ✨ Type of Change
 
-- [ ] PR title follows [Conventional Commits](https://www.conventionalcommits.org/)
-- [ ] `uv run pre-commit run --all-files` passes
-- [ ] `uv run pytest` passes (new behaviour is covered by tests)
-- [ ] `uv run mypy src` passes
-- [ ] Documentation updated where relevant
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality
+      to not work as expected)
+- [ ] 📝 Documentation update
+- [ ] 🎨 Refactoring (no functional changes, no API changes)
+
+## 🧪 How Has This Been Tested
+
+Please describe the tests that you ran to verify your changes.
+
+- [ ] **Unit Tests:** `uv run pytest`
+- [ ] **Type Check:** `uv run mypy src`
+- [ ] **Manual Test:** (Describe steps)
+
+## 🏗️ Checklist
+
+- [ ] My PR title follows [Conventional Commits](https://www.conventionalcommits.org/).
+- [ ] My code follows the style guidelines of this project (PEP 8) and
+      `uv run pre-commit run --all-files` passes.
+- [ ] I have performed a self-review of my own code.
+- [ ] I have commented my code, particularly in hard-to-understand areas.
+- [ ] I have made corresponding changes to the documentation.
+- [ ] My changes generate no new warnings.
+- [ ] I have added tests that prove my fix is effective or that my feature
+      works.
+
+## 📷 Screenshots (if applicable)
+
+If this is a UI change or produces a specific output/graph, add screenshots
+here.
