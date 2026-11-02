@@ -79,14 +79,14 @@ publish-url = "https://test.pypi.org/legacy/"
 explicit = true
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 strict = true
 warn_unreachable = true
 pretty = true
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py313"
 lint.extend-select = [
   "E",
   "F",
