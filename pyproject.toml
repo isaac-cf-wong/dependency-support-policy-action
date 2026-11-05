@@ -36,11 +36,11 @@ dev = [
   "prek>=0.5.10",
   "pytest>=9.2.0",
   "pytest-cov>=7.1.0",
-  "ruff>=0.17.3",
+  "ruff>=0.17.4",
   "zizmor>=1.32.0",
 ]
 build = ["hatch>=1.18.2"]
-docs = ["mkdocstrings-python>=2.0.10", "zensical>=0.0.74"]
+docs = ["mkdocstrings-python>=2.0.10", "zensical>=0.1.0"]
 release = ["git-cliff>=2.14.2"]
 
 [tool.dependency-support-policy]
