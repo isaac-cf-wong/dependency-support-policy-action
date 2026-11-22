@@ -37,7 +37,7 @@ dev = [
   "pytest>=9.2.0",
   "pytest-cov>=7.1.0",
   "ruff>=0.17.6",
-  "zizmor>=1.32.0",
+  "zizmor>=1.33.1",
 ]
 build = ["hatch>=1.18.2"]
 docs = ["mkdocstrings-python>=2.0.11", "zensical>=0.1.3"]
